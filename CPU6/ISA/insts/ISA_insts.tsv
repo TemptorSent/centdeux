@@ -1,0 +1,240 @@
+# Group: MemGrp	
+# Op	Range	Mn	FlagsR	FlagsW	RegsR	RegsW	Descriptoin
+CTRL:	NONE
+0x00	0x00	HLT	None	None	None	P,R	Halt / Wait for Interrupt
+0x01	0x00	NOP	None	None	None	None	No Operation
+0x02	0x00	SF	None	F	None	None	Set Fault (Overflow) Flag
+0x03	0x00	RF	None	F	None	None	Reset Fault (Overflow) Flag
+0x04	0x00	EI	None	I	None	None	Enable Interrupt System
+0x05	0x00	DI	None	I	None	None	Disable Interrupt System
+0x06	0x00	SL	None	L	None	None	Set Link (Carry) Flag
+0x07	0x00	RL	None	L	None	None	Reset Link (Carry) Flag
+0x08	0x00	CL	L	L	None	None	Complement Link (Carry) Flag
+0x09	0x00	RSR	None	None	X,S	X,PC,S	Return from Subroutine
+0x0a	0x00	RI	F,L,M,V	F,L,M,V	PC,LV	P,C,LV	Return from Interrupt
+0x0b	0x00	RIM	F,L,M,V	F,L,M,V	LV	C,LV	Return From Interrupt Modified
+0x0c	0x00	ELO	L	TTY	None	None	Enable Link to TTY (?)
+0x0d	0x00	PCX	None	None	PC	X	Move PC to X
+0x0e	0x00	DLY	None	None	None	None	Delay 4.55ms
+0x0f	0x00	RIS	F,L,M,V	F,L,M,V	S	X,PC,LV,MAP	Return from IPL using Stack
+
+COND:	DISP
+0x10	0x00	BL	L	None	PC	PC	Branch if Link (Carry) Flag Set
+0x11	0x00	BNL	L	None	PC	PC	Branch if Link (Carry) Flag Not Set
+0x12	0x00	BF	F	None	PC	PC	Branch if Fault (Overflow) Flag Set
+0x13	0x00	BNF	F	None	PC	PC	Branch if Fault (Overflow) Flag Not Set
+0x14	0x00	BZ	V	None	PC	PC	Branch if Equal to Zero (V Flag Set)
+0x15	0x00	BNZ	V	None	PC	PC	Branch if Not Equal to Zero (V Flag Not Set)
+0x16	0x00	BM	M	None	PC	PC	Branch if Minus (Sign) Flag Set
+0x17	0x00	BP	M	None	PC	PC	Branch on Plus (Sign Flag Not Set)
+0x18	0x00	BGZ	M,V	None	PC	PC	Branch if Greater than Zero (M,V Flags Not Set)
+0x19	0x00	BLE	M,V	None	PC	PC	Branch if Less Than or Equal to Zero (M or V Flag Set)
+0x1a	0x00	BS1	SSW1	None	PC	PC	Branch if Sense Switch 1 Set
+0x1b	0x00	BS2	SSW2	None	PC	PC	Branch if Sense Switch 2 Set
+0x1c	0x00	BS3	SSW3	None	PC	PC	Branch if Sense Switch 3 Set
+0x1d	0x00	BS4	SSW4	None	PC	PC	Branch if Sense Switch 4 Set
+0x1e	0x00	BTM	TTY	None	PC	PC	Branch on Teletype MARK (?)
+0x1f	0x00	BEP	MEM	None	PC	PC	Branch on Even Parity (?)
+
+ALU1B:	ALU1
+0x20	0x00	INR.B	None	F,M,V	sr	sr	Increment Register (Byte)
+0x21	0x00	DCR.B	None	F,M,V	sr	sr	Decrement Register (Byte)
+0x22	0x00	CLR.B	None	F,L,M,V	sr	sr	Clear Register (Byte)
+0x23	0x00	IVR.B	None	F,L,M,V	sr	sr	Invert Register (Byte)
+0x24	0x00	SRR.B	L	F,L,M,V	sr	sr	Arithmetic Shift Register Right (Byte)
+0x25	0x00	SLR.B	None	F,L,M,V	sr	sr	Arithmetic Shift Register Left (Byte)
+0x26	0x00	RRR.B	L	F,L,M,V	sr	sr	Rotate Register Right (Byte)
+0x27	0x00	RLR.B	L	F,L,M,V	sr	sr	Rotate Register Left (Byte)
+
+ALUIA1B:	None
+0x28	0x00	INA.B	None	F,M,V	A	A	Increment Accumulator (Byte)
+0x29	0x00	DCA.B	None	F,M,V	A	A	Decrement Accumulator (Byte)
+0x2a	0x00	CLA.B	None	F,L,M,V	A	A	Clear Accumulator (Byte)
+0x2b	0x00	IVA.B	None	F,L,M,V	A	A	Invert Accumulator (Byte)
+0x2c	0x00	SRA.B	L	F,L,M,V	A	A	Arithmetic Shift Accumulator Right (Byte)
+0x2d	0x00	SLA.B	None	F,L,M,V	A	A	Arithmetic Shift Accumulator Left (Byte)
+
+EXT2:	EXT2
+0x2e	0x00	MAP?	L	F,L,M,V	sr	sr	Extended Memory Map Functions?
+0x2f	0x00	MATH?	L	F,L,M,V	sr	sr	Extended Math Functions?
+
+ALU1:	ALU1
+0x30	0x00	INR	None	F,M,V	sr	sr	Increment Register
+0x31	0x00	DCR	None	F,M,V	sr	sr	Decrement Register
+0x32	0x00	CLR	None	F,L,M,V	sr	sr	Clear Register
+0x33	0x00	IVR	None	F,L,M,V	sr	sr	Invert Register
+0x34	0x00	SRR	L	F,L,M,V	sr	sr	Arithmetic Shift Register Right
+0x35	0x00	SLR	None	F,L,M,V	sr	sr	Arithmetic Shift Register Left
+0x36	0x00	RRR	L	F,L,M,V	sr	sr	Rotate Register Right
+0x37	0x00	RLR	L	F,L,M,V	sr	sr	Rotate Register Left
+
+ALUIA1:	NONE
+0x38	0x00	INA	None	F,M,V	A	A	Increment Accumulator
+0x39	0x00	DCA	None	F,M,V	A	A	Decrement Accumulator
+0x3a	0x00	CLA	None	F,L,M,V	A	A	Clear Accumulator
+0x3b	0x00	IVA	None	F,L,M,V	A	A	Invert Accumulator
+0x3c	0x00	SRA	L	F,L,M,V	A	A	Arithmetic Shift Accumulator Right
+0x3d	0x00	SLA	None	F,L,M,V	A	A	Arithmetic Shift Accumulator Left
+
+ALUIX1:	NONE
+0x3e	0x00	INX	None	F,M,V	X	X	Increment Accumulator
+0x3f	0x00	DCX	None	F,M,V	X	X	Decrement Accumulator
+
+ALU2B:	ALU2
+0x40	0x00	ADD.B	None	F,L,M,V	sr,dr	dr	Add (dr+sr -> dr) (Byte)
+0x41	0x00	SUB.B	None	F,L,M,V	sr,dr	dr	Subtract (sr-dr -> dr) (Byte)
+0x42	0x00	AND.B	None	M,V	sr,dr	dr	And (dr&sr -> dr) (Byte)
+0x43	0x00	ORI.B	None	M,V	sr,dr	dr	Or (dr|sr -> dr) (Byte)
+0x44	0x00	ORE.B	None	M,V	sr,dr	dr	Or (dr^sr -> dr) (Byte)
+0x45	0x00	XFR.B	None	M,V	sr	dr	Transfer (sr -> dr) (Byte)
+
+ALUIA2B:	NONE
+0x48	0x00	AAB.B	None	F,L,M,V	A,B	B	Add (A+B -> B) (Byte)
+0x49	0x00	SAB.B	None	F,L,M,V	A,B	B	Subtract (A-B -> B) (Byte)
+0x4a	0x00	NAB.B	None	M,V	A,B	B	And (A&B -> B) (Byte)
+0x4b	0x00	XAX.B	None	M,V	A	X	Transfer (A -> X) (Byte)
+0x4c	0x00	XAY.B	None	M,V	A	Y	Transfer (A -> Y) (Byte)
+0x4d	0x00	XAB.B	None	M,V	A	B	Transfer (A -> B) (Byte)
+0x4e	0x00	XAZ.B	None	M,V	A	Z	Transfer (A -> Z) (Byte)
+0x4f	0x00	XAS.B	None	M,V	A	S	Transfer (A -> S) (Byte)
+
+
+ALU2:	ALU2
+0x50	0x00	ADD	None	F,L,M,V	sr,dr	dr	Add (dr+sr -> dr)
+0x51	0x00	SUB	None	F,L,M,V	sr,dr	dr	Subtract (sr-dr -> dr)
+0x52	0x00	AND	None	M,V	sr,dr	dr	And (dr&sr -> dr)
+0x53	0x00	ORI	None	M,V	sr,dr	dr	Or (dr|sr -> dr)
+0x54	0x00	ORE	None	M,V	sr,dr	dr	Or (dr^sr -> dr)
+0x55	0x00	XFR	None	M,V	sr	dr	Transfer (sr -> dr)
+
+ALUIA2:	NONE
+0x58	0x00	AAB	None	F,L,M,V	A,B	B	Add (A+B -> B)
+0x59	0x00	SAB	None	F,L,M,V	A,B	B	Subtract (A-B -> B)
+0x5a	0x00	NAB	None	M,V	A,B	B	And (A&B -> B)
+0x5b	0x00	XAX	None	M,V	A	X	Transfer (A -> X)
+0x5c	0x00	XAY	None	M,V	A	Y	Transfer (A -> Y)
+0x5d	0x00	XAB	None	M,V	A	B	Transfer (A -> B)
+0x5e	0x00	XAZ	None	M,V	A	Z	Transfer (A -> Z)
+0x5f	0x00	XAS	None	M,V	A	S	Transfer (A -> S)
+
+LDX:	MEM
+0x60	0x05	LDX	None	F,L,M,V	None	X	Load X Register Word
+
+STX:	MEM
+0x68	0x05	STX	None	F,L,M,V	X	None	Store X Register Word
+
+JMP:	MEM
+0x71	0x04	JMP	None	None	None	PC	Unconditional Jump
+
+JSR:	MEM
+0x79	0x04	JSR	None	None	X,PC,S	P,S,X,PC	Jump to Subroutine
+
+
+LDAB:	MEMB
+0x80	0x05	LDA.B	None	F,L,M,V	None	A	Load A Register (Byte)
+
+LDAIB:	NONE
+0x88	0x00	LDAA.B	None	F,L,M,V	A	A	Load A Register from address in A Register (Byte)
+0x89	0x00	LDAB.B	None	F,L,M,V	B	A	Load A Register from address in B Register (Byte)
+0x8a	0x00	LDAX.B	None	F,L,M,V	X	A	Load A Register from address in X Register (Byte)
+0x8b	0x00	LDAY.B	None	F,L,M,V	Y	A	Load A Register from address in Y Register (Byte)
+0x8c	0x00	LDAZ.B	None	F,L,M,V	Z	A	Load A Register from address in Z Register (Byte)
+0x8d	0x00	LDAS.B	None	F,L,M,V	S	A	Load A Register from address in S Register (Byte)
+0x8e	0x00	LDAC.B	None	F,L,M,V	C	A	Load A Register from address in C Register (Byte)
+0x8f	0x00	LDAP.B	None	F,L,M,V	P	A	Load A Register from address in P Register (Byte)
+
+LDA:	MEM
+0x90	0x05	LDA	None	F,L,M,V	None	A	Load A Register
+
+LDAI:	NONE
+0x98	0x00	LDAA	None	F,L,M,V	A	A	Load A Register from address in A Register
+0x99	0x00	LDAB	None	F,L,M,V	B	A	Load A Register from address in B Register
+0x9a	0x00	LDAX	None	F,L,M,V	X	A	Load A Register from address in X Register
+0x9b	0x00	LDAY	None	F,L,M,V	Y	A	Load A Register from address in Y Register
+0x9c	0x00	LDAZ	None	F,L,M,V	Z	A	Load A Register from address in Z Register
+0x9d	0x00	LDAS	None	F,L,M,V	S	A	Load A Register from address in S Register
+0x9e	0x00	LDAC	None	F,L,M,V	C	A	Load A Register from address in C Register
+0x9f	0x00	LDAP	None	F,L,M,V	P	A	Load A Register from address in P Register
+
+
+STAB:	MEMB
+0xa0	0x05	STA.B	None	F,L,M,V	A	None	Store A Register (Byte)
+
+STAIB:	NONE
+0xa8	0x00	STAA.B	None	F,L,M,V	A	None	Store Value in A Register to address in A Register (Byte)
+0xa9	0x00	STAB.B	None	F,L,M,V	A,B	None	Store Value in A Register to address in B Register (Byte)
+0xaa	0x00	STAX.B	None	F,L,M,V	A,X	None	Store Value in A Register to address in X Register (Byte)
+0xab	0x00	STAY.B	None	F,L,M,V	A,Y	None	Store Value in A Register to address in Y Register (Byte)
+0xac	0x00	STAZ.B	None	F,L,M,V	A,Z	None	Store Value in A Register to address in Z Register (Byte)
+0xad	0x00	STAS.B	None	F,L,M,V	A,S	None	Store Value in A Register to address in S Register (Byte)
+0xae	0x00	STAC.B	None	F,L,M,V	A,C	None	Store Value in A Register to address in C Register (Byte)
+0xaf	0x00	STAP.B	None	F,L,M,V	A,P	None	Store Value in A Register to address in P Register (Byte)
+
+STA:	MEM
+0xb0	0x05	STA	None	F,L,M,V	A	None	Store A Register
+
+STAI:	NONE
+0xb8	0x00	STAA	None	F,L,M,V	A	None	Store Value in A Register to address in A Register
+0xb9	0x00	STAB	None	F,L,M,V	A,B	None	Store Value in A Register to address in B Register
+0xba	0x00	STAX	None	F,L,M,V	A,X	None	Store Value in A Register to address in X Register
+0xbb	0x00	STAY	None	F,L,M,V	A,Y	None	Store Value in A Register to address in Y Register
+0xbc	0x00	STAZ	None	F,L,M,V	A,Z	None	Store Value in A Register to address in Z Register
+0xbd	0x00	STAS	None	F,L,M,V	A,S	None	Store Value in A Register to address in S Register
+0xbe	0x00	STAC	None	F,L,M,V	A,C	None	Store Value in A Register to address in C Register
+0xbf	0x00	STAP	None	F,L,M,V	A,P	None	Store Value in A Register to address in P Register
+
+
+LDBB:	MEMB
+0xc0	0x05	LDB.B	None	F,L,M,V	None	A	Load B Register (Byte)
+
+LDBIB:	NONE
+0xc8	0x00	LDBA.B	None	F,L,M,V	A	A	Load B Register from address in A Register (Byte)
+0xc9	0x00	LDBB.B	None	F,L,M,V	B	A	Load B Register from address in B Register (Byte)
+0xca	0x00	LDBX.B	None	F,L,M,V	X	A	Load B Register from address in X Register (Byte)
+0xcb	0x00	LDBY.B	None	F,L,M,V	Y	A	Load B Register from address in Y Register (Byte)
+0xcc	0x00	LDBZ.B	None	F,L,M,V	Z	A	Load B Register from address in Z Register (Byte)
+0xcd	0x00	LDBS.B	None	F,L,M,V	S	A	Load B Register from address in S Register (Byte)
+0xce	0x00	LDBC.B	None	F,L,M,V	C	A	Load B Register from address in C Register (Byte)
+0xcf	0x00	LDBP.B	None	F,L,M,V	P	A	Load B Register from address in P Register (Byte)
+
+LDB:	MEM
+0xd0	0x05	LDB	None	F,L,M,V	None	A	Load B Register
+
+LDBI:	NONE
+0xd8	0x00	LDBA	None	F,L,M,V	A	A	Load B Register from address in A Register
+0xd9	0x00	LDBB	None	F,L,M,V	B	A	Load B Register from address in B Register
+0xda	0x00	LDBX	None	F,L,M,V	X	A	Load B Register from address in X Register
+0xdb	0x00	LDBY	None	F,L,M,V	Y	A	Load B Register from address in Y Register
+0xdc	0x00	LDBZ	None	F,L,M,V	Z	A	Load B Register from address in Z Register
+0xdd	0x00	LDBS	None	F,L,M,V	S	A	Load B Register from address in S Register
+0xde	0x00	LDBC	None	F,L,M,V	C	A	Load B Register from address in C Register
+0xdf	0x00	LDBP	None	F,L,M,V	P	A	Load B Register from address in P Register
+
+
+STBB:	MEMB
+0xe0	0x05	STB.B	None	F,L,M,V	B	None	Store B Register (Byte)
+
+STBIB:	NONE
+0xe8	0x00	STBA.B	None	F,L,M,V	B,A	None	Store Value in B Register to address in A Register (Byte)
+0xe9	0x00	STBB.B	None	F,L,M,V	B	None	Store Value in B Register to address in B Register (Byte)
+0xea	0x00	STBX.B	None	F,L,M,V	B,X	None	Store Value in B Register to address in X Register (Byte)
+0xeb	0x00	STBY.B	None	F,L,M,V	B,Y	None	Store Value in B Register to address in Y Register (Byte)
+0xec	0x00	STBZ.B	None	F,L,M,V	B,Z	None	Store Value in B Register to address in Z Register (Byte)
+0xed	0x00	STBS.B	None	F,L,M,V	B,S	None	Store Value in B Register to address in S Register (Byte)
+0xee	0x00	STBC.B	None	F,L,M,V	B,C	None	Store Value in B Register to address in C Register (Byte)
+0xef	0x00	STBP.B	None	F,L,M,V	B,P	None	Store Value in B Register to address in P Register (Byte)
+
+STB:	MEM
+0xf0	0x05	STB	None	F,L,M,V	B	None	Store B Register
+
+STBI:	NONE
+0xf8	0x00	STBA	None	F,L,M,V	B,A	None	Store Value in B Register to address in A Register
+0xf9	0x00	STBB	None	F,L,M,V	B	None	Store Value in B Register to address in B Register
+0xfa	0x00	STBX	None	F,L,M,V	B,X	None	Store Value in B Register to address in X Register
+0xfb	0x00	STBY	None	F,L,M,V	B,Y	None	Store Value in B Register to address in Y Register
+0xfc	0x00	STBZ	None	F,L,M,V	B,Z	None	Store Value in B Register to address in Z Register
+0xfd	0x00	STBS	None	F,L,M,V	B,S	None	Store Value in B Register to address in S Register
+0xfe	0x00	STBC	None	F,L,M,V	B,C	None	Store Value in B Register to address in C Register
+0xff	0x00	STBP	None	F,L,M,V	B,P	None	Store Value in B Register to address in P Register
+
+

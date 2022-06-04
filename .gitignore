@@ -1,6 +1,11 @@
 *.o
+*.d
+.deps/
+obj/
 a.out
 *.core
 .*.swp
 *.exe
 *.stackdump
+.tmp
+
