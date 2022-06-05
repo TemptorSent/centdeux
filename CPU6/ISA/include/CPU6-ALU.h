@@ -1,0 +1,19 @@
+#pragma once
+#include "types-common.h"
+
+enum CPU6_ALU_OPS {
+	C6_ALU_OP_INC,
+	C6_ALU_OP_DEC,
+	C6_ALU_OP_CLR,
+	C6_ALU_OP_INV,
+	C6_ALU_OP_ASR,
+	C6_ALU_OP_LSL,
+	C6_ALU_OP_ROR,
+	C6_ALU_OP_ROL,
+	C6_ALU_OP_ADD,
+	C6_ALU_OP_SUB,
+	C6_ALU_OP_AND,
+	C6_ALU_OP_OR,
+	C6_ALU_OP_XOR,
+	C6_ALU_OP_XFR
+};
