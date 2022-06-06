@@ -185,30 +185,30 @@ STAI:	NONE
 
 
 LDBB:	MEMB
-0xc0	0x05	LDB.B	None	F,L,M,V	None	A	Load B Register (Byte)
+0xc0	0x05	LDB.B	None	F,L,M,V	None	B	Load B Register (Byte)
 
 LDBIB:	NONE
-0xc8	0x00	LDBA.B	None	F,L,M,V	A	A	Load B Register from address in A Register (Byte)
-0xc9	0x00	LDBB.B	None	F,L,M,V	B	A	Load B Register from address in B Register (Byte)
-0xca	0x00	LDBX.B	None	F,L,M,V	X	A	Load B Register from address in X Register (Byte)
-0xcb	0x00	LDBY.B	None	F,L,M,V	Y	A	Load B Register from address in Y Register (Byte)
-0xcc	0x00	LDBZ.B	None	F,L,M,V	Z	A	Load B Register from address in Z Register (Byte)
-0xcd	0x00	LDBS.B	None	F,L,M,V	S	A	Load B Register from address in S Register (Byte)
-0xce	0x00	LDBC.B	None	F,L,M,V	C	A	Load B Register from address in C Register (Byte)
-0xcf	0x00	LDBP.B	None	F,L,M,V	P	A	Load B Register from address in P Register (Byte)
+0xc8	0x00	LDBA.B	None	F,L,M,V	A	B	Load B Register from address in A Register (Byte)
+0xc9	0x00	LDBB.B	None	F,L,M,V	B	B	Load B Register from address in B Register (Byte)
+0xca	0x00	LDBX.B	None	F,L,M,V	X	B	Load B Register from address in X Register (Byte)
+0xcb	0x00	LDBY.B	None	F,L,M,V	Y	B	Load B Register from address in Y Register (Byte)
+0xcc	0x00	LDBZ.B	None	F,L,M,V	Z	B	Load B Register from address in Z Register (Byte)
+0xcd	0x00	LDBS.B	None	F,L,M,V	S	B	Load B Register from address in S Register (Byte)
+0xce	0x00	LDBC.B	None	F,L,M,V	C	B	Load B Register from address in C Register (Byte)
+0xcf	0x00	LDBP.B	None	F,L,M,V	P	B	Load B Register from address in P Register (Byte)
 
 LDB:	MEM
-0xd0	0x05	LDB	None	F,L,M,V	None	A	Load B Register
+0xd0	0x05	LDB	None	F,L,M,V	None	B	Load B Register
 
 LDBI:	NONE
-0xd8	0x00	LDBA	None	F,L,M,V	A	A	Load B Register from address in A Register
-0xd9	0x00	LDBB	None	F,L,M,V	B	A	Load B Register from address in B Register
-0xda	0x00	LDBX	None	F,L,M,V	X	A	Load B Register from address in X Register
-0xdb	0x00	LDBY	None	F,L,M,V	Y	A	Load B Register from address in Y Register
-0xdc	0x00	LDBZ	None	F,L,M,V	Z	A	Load B Register from address in Z Register
-0xdd	0x00	LDBS	None	F,L,M,V	S	A	Load B Register from address in S Register
-0xde	0x00	LDBC	None	F,L,M,V	C	A	Load B Register from address in C Register
-0xdf	0x00	LDBP	None	F,L,M,V	P	A	Load B Register from address in P Register
+0xd8	0x00	LDBA	None	F,L,M,V	A	B	Load B Register from address in A Register
+0xd9	0x00	LDBB	None	F,L,M,V	B	B	Load B Register from address in B Register
+0xda	0x00	LDBX	None	F,L,M,V	X	B	Load B Register from address in X Register
+0xdb	0x00	LDBY	None	F,L,M,V	Y	B	Load B Register from address in Y Register
+0xdc	0x00	LDBZ	None	F,L,M,V	Z	B	Load B Register from address in Z Register
+0xdd	0x00	LDBS	None	F,L,M,V	S	B	Load B Register from address in S Register
+0xde	0x00	LDBC	None	F,L,M,V	C	B	Load B Register from address in C Register
+0xdf	0x00	LDBP	None	F,L,M,V	P	B	Load B Register from address in P Register
 
 
 STBB:	MEMB
