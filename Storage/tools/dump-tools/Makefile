@@ -1,11 +1,11 @@
-TOP := ../..
+TOP := ../../..
 include $(TOP)/common/common.mk
 
-PROGS := stripMSB
+PROGS := repack_ccdp_dump
 SRCS := $(addsuffix .c, $(PROGS))
 LIST := $(addprefix $(TOOLBIN)/, $(PROGS))
 EXES := $(addsuffix $(EXE_EXT), $(LIST))
-SCRIPTS := centstrings.sh
+SCRIPTS := od_centurionCHS.sh 
 EXES += $(addprefix $(TOOLBIN)/, $(SCRIPTS))
 .PHONY: all clean $(PROGS)
 
