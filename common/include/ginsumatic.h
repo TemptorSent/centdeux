@@ -12,6 +12,16 @@
 #define BITRANGE(d,s,n) (((d)>>(s)) & ((1LL<<(n))-1LL) )
 #define BITRANGE_R(d,s,n) (bitreverse_64(BITRANGE(d,s,n)) >>(64-(n)))
 
+/* Macros to get Least/Most significant nibble of a byte and converse */ 
+#define BYTE_LSN(b) ((b&0x0f)>>0)
+#define BYTE_MSN(b) ((b&0xf0)>>4)
+#define NIBBLES_TO_BYTE(msn,lsn) (msn<<4|lsn)
+
+/* Macros to get Least/Most significant byte of a word and converse */ 
+#define WORD_LSB(w) ((w&0x00ff)>>0)
+#define WORD_MSB(w) ((w&0xff00)>>8)
+#define BYTES_TO_WORD(msb,lsb) (msb<<8|lsb)
+
 /* Extract a bit from a larger type */
 void bit_of_a_twobit( bit_t *dest, twobit_t *src, bit_t bit);
 void bit_of_an_octal( bit_t *dest, octal_t *src, twobit_t bit);

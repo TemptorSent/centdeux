@@ -37,7 +37,7 @@ static inline int CPU6_clear_IE(CPU6_machine_t *m);
 static inline int CPU6_get_IE(CPU6_machine_t *m);
 static inline int CPU6_get_LV(CPU6_machine_t *m);
 static inline int CPU6_set_LV(CPU6_machine_t *m, byte_t lv);
-static inline int CPU6_return_int(CPU6_machine_t *m, char rtype);
+static inline int CPU6_return_int(CPU6_machine_t *m, char mode);
 static inline int CPU6_get_PC(CPU6_machine_t *m);
 static inline int CPU6_set_PC(CPU6_machine_t *m, word_t addr);
 static inline int CPU6_inc_PC(CPU6_machine_t *m);

@@ -109,6 +109,35 @@ enum CPU6_REGS {
 	C6_REG_P1=0xf
 };
 
+enum CPU6_CONTEXT_BITS {
+	C6_CONTEXT_MAP_b0=0x0,
+	C6_CONTEXT_MAP_b1=0x1,
+	C6_CONTEXT_MAP_b2=0x2,
+	C6_CONTEXT_MAP_b3=0x3,
+	C6_CONTEXT_FLAG_L=0x4,
+	C6_CONTEXT_FLAG_F=0x5,
+	C6_CONTEXT_FLAG_M=0x6,
+	C6_CONTEXT_FLAG_V=0x7,
+	C6_CONTEXT_IPL_b0=0xc,
+	C6_CONTEXT_IPL_b1=0xd,
+	C6_CONTEXT_IPL_b2=0xe,
+	C6_CONTEXT_IPL_b3=0xf
+};
+
+typedef union CPU6_context_reg_t {
+	word_t	word;
+	struct {
+		word_t map:4;
+		word_t flag_l:1;
+		word_t flag_f:1;
+		word_t flag_m:1;
+		word_t flag_v:1;
+		word_t unused:4;
+		word_t ipl:4;
+	};
+} CPU6_context_reg_t;
+
+
 typedef const struct ISA_inst_t {
 	enum CPU6_AMODES_MEM amode_mem;
 	byte_t	opcode;

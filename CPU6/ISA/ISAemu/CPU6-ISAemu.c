@@ -1,10 +1,15 @@
+#include "ginsumatic.h"
 #include "CPU6-ISA.h"
 #include "CPU6-ALU.h"
 #include "CPU6-machine.h"
 #include "CPU6-ISAemu_generated.h"
 
 
-/* Bus functoins */
+/*
+ * Bus functions
+ *
+*/
+
 int CPU6_BUS_read_byte(CPU6_machine_t *m, longword_t sysaddr) {
 	return(0);
 }
@@ -21,14 +26,20 @@ int CPU6_MMIO_write_byte(CPU6_machine_t *m, longword_t sysaddr, byte_t val) {
 	return(0);
 }
 
-/* Unknown instructions */
+/*
+ * Unknown instructions
+ *
+*/
 static inline int CPU6_inst_unknown(CPU6_machine_t *m, byte_t op) {
 	CPU6_unimplemented("Unknown operation 0x%02x",op);
 	return(0);
 }
 
 
-/* Instruction functions */
+/*
+ * Instruction functions
+ *
+*/
 static inline int CPU6_fetch_byte(CPU6_machine_t *m) {
 	word_t pc=CPU6_get_PC(m);
 	CPU6_inc_PC(m);
@@ -48,7 +59,10 @@ static inline int CPU6_fetch_op(CPU6_machine_t *m) {
 }
 
 
-/* Control functions */
+/*
+ * Control functions
+ *
+*/
 static inline int CPU6_halt(CPU6_machine_t *m) {
 	m->run=0;
 	return(0);
@@ -63,7 +77,10 @@ static inline int CPU6_delay(CPU6_machine_t *m) {
 }
 
 
-/* Flag functions */
+/*
+ * Flag functions
+ *
+*/
 static inline int CPU6_set_flags(CPU6_machine_t *m, enum CPU6_FLAGS f) {
 	m->flags |= f;
 	return(0);
@@ -88,7 +105,10 @@ static inline int CPU6_check_flags_clear(CPU6_machine_t *m, enum CPU6_FLAGS f) {
 }
 
 
-/* Hardware state functions */
+/*
+ * Hardware state functions
+ *
+*/
 static inline int CPU6_check_sense_switch_set(CPU6_machine_t *m, byte_t sw) {
 	return( (m->sense_switches & (1<<sw))? 1 : 0 );
 }
@@ -109,22 +129,28 @@ static inline int CPU6_tty_enable_link_out(CPU6_machine_t *m) {
 }
 
 
-/* Register functions */
+/*
+ * Register functions
+ *
+*/
+
+#define ILREG(m,r) ( (m->LV<<4) | r )
+
 static inline int CPU6_get_reg8(CPU6_machine_t *m, nibble_t reg) {
-	return(CPU6_MEM_read_byte(m, ((m->LV<<4) | reg)) );
+	return( CPU6_MEM_read_byte(m, ILREG(m,reg) ) );
 }
 
 static inline int CPU6_get_reg16(CPU6_machine_t *m, nibble_t reg) {
-	return(CPU6_MEM_read_word(m, ((m->LV<<4) | reg)) );
+	return( CPU6_MEM_read_word(m, ILREG(m,reg) ) );
 }
 
 static inline int CPU6_set_reg8(CPU6_machine_t *m, nibble_t reg, byte_t val) {
-	CPU6_MEM_write_byte(m, ((m->LV<<4) | reg), val);
+	CPU6_MEM_write_byte(m, ILREG(m,reg), val);
 	return(0);
 }
 
 static inline int CPU6_set_reg16(CPU6_machine_t *m, nibble_t reg, word_t val) {
-	CPU6_MEM_write_word(m, ((m->LV<<4) | reg), val);
+	CPU6_MEM_write_word(m, ILREG(m,reg), val);
 	return(0);
 }
 
@@ -137,10 +163,8 @@ static inline int CPU6_reg_push_byte(CPU6_machine_t *m, nibble_t reg, byte_t val
 }
 
 static inline int CPU6_reg_push_word(CPU6_machine_t *m, nibble_t reg, word_t val) {
-	byte_t msb= val >> 8;
-	byte_t lsb= val & 0xff;
-	CPU6_reg_push_byte(m, reg, lsb);
-	CPU6_reg_push_byte(m, reg, msb);
+	CPU6_reg_push_byte(m, reg, WORD_LSB(val));
+	CPU6_reg_push_byte(m, reg, WORD_MSB(val));
 	return(0);
 }
 
@@ -153,10 +177,13 @@ static inline int CPU6_reg_pop_byte(CPU6_machine_t *m, nibble_t reg) {
 static inline int CPU6_reg_pop_word(CPU6_machine_t *m, nibble_t reg) {
 	byte_t msb= CPU6_reg_pop_byte(m, reg);
 	byte_t lsb= CPU6_reg_pop_byte(m, reg);
-	return(msb<<8|lsb);
+	return(BYTES_TO_WORD(msb,lsb));
 }
 
-/* Stack functions */
+/*
+ * Stack functions
+ *
+*/
 static inline int CPU6_stack_push_byte(CPU6_machine_t *m, byte_t val) {
 	return(CPU6_reg_push_byte(m,C6_REG_S, val));
 }
@@ -193,8 +220,8 @@ static inline int CPU6_stack_pop_reg16(CPU6_machine_t *m, nibble_t reg) {
 
 static inline int CPU6_stack_push_reg_range(CPU6_machine_t *m) {
 	byte_t args=CPU6_fetch_byte(m);
-	byte_t start=args>>4;
-	byte_t range=args&0x0f;
+	byte_t start=BYTE_MSN(args);
+	byte_t range=BYTE_LSN(args);
 	for(int i=range; i >= 0; i--) {
 		CPU6_reg_push_byte(m,C6_REG_S, CPU6_get_reg8(m, (start + i) ) );
 	}
@@ -203,8 +230,8 @@ static inline int CPU6_stack_push_reg_range(CPU6_machine_t *m) {
 
 static inline int CPU6_stack_pop_reg_range(CPU6_machine_t *m) {
 	byte_t args=CPU6_fetch_byte(m);
-	byte_t start=args>>4;
-	byte_t range=args&0x0f;
+	byte_t start=BYTE_MSN(args);
+	byte_t range=BYTE_LSN(args);
 	for(int i=0; i <= range ; i++) {
 		CPU6_set_reg8(m, (start + i), CPU6_reg_pop_byte(m,C6_REG_S));
 	}
@@ -212,7 +239,10 @@ static inline int CPU6_stack_pop_reg_range(CPU6_machine_t *m) {
 }
 
 
-/* Interrupt functions */
+/*
+ * Interrupt functions
+ *
+*/
 static inline int CPU6_set_IE(CPU6_machine_t *m) {
 	m->IE=1;
 	return(0);
@@ -236,16 +266,20 @@ static inline int CPU6_set_LV(CPU6_machine_t *m, byte_t lv) {
 	return(0);
 }
 
-static inline int CPU6_return_int(CPU6_machine_t *m, char rtype) {
+static inline int CPU6_return_int(CPU6_machine_t *m, char mode) {
 	byte_t unk, lv, st, map;
-	word_t regC,regX;
-	switch(rtype) {
+	word_t regC,regCn,regX;
+	switch(mode) {
 		case '0':
 			CPU6_set_reg16(m,C6_REG_P,CPU6_get_PC(m));
 		case 'M':
 			regC=CPU6_get_reg16(m,C6_REG_C);
-			CPU6_set_reg16(m, C6_REG_C, ( (regC&0x0fff) | (m->flags << 12)) );
-			CPU6_set_LV(m, ((regC & 0x00f0) >> 4) );
+			regCn= BYTES_TO_WORD(
+				NIBBLES_TO_BYTE( m->flags, BYTE_LSN(WORD_MSB(regC)) ),
+				NIBBLES_TO_BYTE( BYTE_MSN(WORD_LSB(regC)), m->MAP )
+			);
+			CPU6_set_reg16(m, C6_REG_C, regCn);
+			CPU6_set_LV(m, BYTE_MSN(WORD_LSB(regC)) );
 			break;
 		case 'S':
 			unk=CPU6_stack_pop_byte(m);
@@ -264,7 +298,10 @@ static inline int CPU6_return_int(CPU6_machine_t *m, char rtype) {
 
 
 
-/* PC functions */
+/*
+ * PC functions
+ *
+*/
 static inline int CPU6_get_PC(CPU6_machine_t *m) {
 	return(m->PC);
 }
@@ -297,7 +334,10 @@ static inline int CPU6_MEM_JMP_decode(CPU6_machine_t *m, byte_t amode) {
 	return(0);
 }
 
-/* Subroutine functions */
+/*
+ * Subroutine functions
+ *
+*/
 static inline int CPU6_MEM_JSR_decode(CPU6_machine_t *m, byte_t amode) {
 	word_t ea= CPU6_fetch_word_amode_mem(m, amode);
 
@@ -315,7 +355,10 @@ static inline int CPU6_return_sub(CPU6_machine_t *m) {
 	return(0);
 }
 
-/* Memory functions */
+/*
+ * Memory functions
+ *
+*/
 
 static inline int CPU6_MEM_read_byte(CPU6_machine_t *m, word_t addr) {
 	if(addr < 0x0100) { /* Register File */
@@ -332,7 +375,7 @@ static inline int CPU6_MEM_read_byte(CPU6_machine_t *m, word_t addr) {
 static inline int CPU6_MEM_read_word(CPU6_machine_t *m, word_t addr) {
 	byte_t msb= CPU6_MEM_read_byte(m, addr);
 	byte_t lsb= CPU6_MEM_read_byte(m, addr+1);
-	return(msb<<8|lsb);
+	return(BYTES_TO_WORD(msb,lsb));
 }
 
 static inline int CPU6_MEM_write_byte(CPU6_machine_t *m, word_t addr, byte_t val) {
@@ -350,10 +393,8 @@ static inline int CPU6_MEM_write_byte(CPU6_machine_t *m, word_t addr, byte_t val
 }
 
 static inline int CPU6_MEM_write_word(CPU6_machine_t *m, word_t addr, word_t val) {
-	byte_t msb= (val>>8);
-	byte_t lsb= (val&0xff);
-	CPU6_MEM_write_byte(m, addr, lsb);
-	CPU6_MEM_write_byte(m, addr+1, msb);
+	CPU6_MEM_write_byte(m, addr, WORD_MSB(val));
+	CPU6_MEM_write_byte(m, addr+1, WORD_LSB(val));
 	return(0);
 }
 
@@ -396,6 +437,7 @@ static inline int CPU6_MEM_ST_decode(CPU6_machine_t *m, bit_t opw, byte_t amode,
 
 
 static inline int CPU6_fetch_byte_amode_mem(CPU6_machine_t *m, byte_t amode) {
+
 	return(0);
 }
 
@@ -417,7 +459,10 @@ static inline int CPU6_inst_2f(CPU6_machine_t *m) {
 }
 
 
-/* ALU functions */
+/*
+ * ALU functions
+ *
+*/
 static inline int CPU6_ALU_op1r(CPU6_machine_t *m, bit_t opw, byte_t op, int dr) {
 	return(0);
 }
@@ -426,7 +471,11 @@ static inline int CPU6_ALU_op2r(CPU6_machine_t *m, bit_t opw, byte_t op, int sr,
 	return(0);
 }
 
-/* Main switch */
+
+
+/***************
+ * Main switch *
+ ***************/
 int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 	byte_t opg=op&0xf0;
 	byte_t opsub=op&0x0f;
