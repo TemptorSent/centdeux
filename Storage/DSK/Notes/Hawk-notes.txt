@@ -1,0 +1,24 @@
+Kromaine13: Understand.
+The status reg. F144 & F145 are going to need to be
+figured out with the Hawk & disk controller using TOS.
+Reading both F144 & F145 with the Hawk "Write Protect" On then Off
+will tell you the Write Protect bit position,
+then send a large seek command then quickly read in F144 & F145
+should see a bit position change for "Not On Cylinder"
+then flip back after a few hundred ms the other way,
+then you could seek the drive to cylinder (0x02 seek)
+do a (0x00 read) check status F144 & F145
+next change sector address to new cylinder but do not do a seek command
+then do a read causing a "sector address error" bit to show up in F144 & F145.
+This is only way I can think of to map out the F144 & F145 status reg.
+Regards,  Ken R.
+
+---
+
+SetDmaForSectorLoad:
+04a4:    2f 00        dma_load_addr WX
+04a6:    90 fe 6f     ld AX, #0xfe6f     ; 400 bytes == 1 sector
+04a9:    2f 02        dma_load_count WX
+04ab:    2f 04        dma_set_mode 0
+04ad:    2f 06        dma_enable
+04af:    09           ret

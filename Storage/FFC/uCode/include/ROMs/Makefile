@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wno-unused -ggdb
 
 .PHONY: all
 
-TOP := ../../../..
+TOP := ../../../../..
 
 include ../../FFC-uCode-common.mk
 
@@ -20,7 +20,7 @@ uC_uIWFILES = \
 
 uC_uIWROMS = $(addprefix $(uC_ROMDIR)/, $(uC_uIWFILES))
 
-AUX_ROMDIR = $(uC_ROMDIR)/AUX
+AUX_ROMDIR = $(uC_ROMDIR)/aux_roms
 FFC_AUX_F800_ROM_FILE = FFCA3-F800.rom
 FFC_AUX_1123_ROM_FILE = FFCA4b-1123-6.1.rom
 FFC_AUX_1123W_ROM_FILE = FFCB3b-1123W.rom

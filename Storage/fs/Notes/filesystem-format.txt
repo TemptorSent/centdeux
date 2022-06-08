@@ -1,0 +1,10 @@
+
+First file header begins at CHS(000,1,00)+000
+
+File header begins at sector boundary
++0x00-0x09: Archive Name - 10 characters, space padded
++0x10-0x11: File type indicator?
++0x12-0x1b: File Name - 10 characters, space padded
++0x28-0x29: Sector Pointer to beginning of next file header
++0x30-0x39: Volume Name - 10 characters, space padded
++0x3a-0x3b: Volume Number? - Two digits, zero padded
