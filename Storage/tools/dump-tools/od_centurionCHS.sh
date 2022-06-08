@@ -19,4 +19,22 @@ if ! [ -f "$1" ] ; then
 	printf "File '%s' does not exist\n" "$1"
 	exit -1
 fi
-${cmd} "$1" | awk '{b=$1%400; sec=int($1/400); S=sec%16; H=(sec%32)/16; C=int(sec/32); $1=""; printf("%06x(%03x,%01x,%02x)+%03x ",sec,C,H,S,b); print;}'
+
+${cmd} "$1" | awk '
+	NR==1 {
+		offset=index($0," ");
+	};
+
+	/^[0-9a-f]+/ {
+		b=$1%400;
+		sec=int($1/400);
+		S=sec%16;
+		H=(sec%32)/16;
+		C=int(sec/32);
+	};
+
+	{
+		printf("%06x(%03x,%01x,%02x)+%03x ",sec,C,H,S,b);
+		printf("%s\n",substr($0,offset));
+	};
+'
