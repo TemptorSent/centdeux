@@ -1,7 +1,7 @@
 TOP := ../../..
 include $(TOP)/common/common.mk
 
-PROGS := centfs-ls
+PROGS := centfs-ls centboot
 SRCS := $(addsuffix .c, $(PROGS))
 LIST := $(addprefix $(TOOLBIN)/, $(PROGS))
 EXES := $(addsuffix $(EXE_EXT), $(LIST))
