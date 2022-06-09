@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "centfs-disk-format.h"
 /*
  * (from Kromaine13 — 06/01/2022)
  * The sector address reg. if at 0xF141 MSB & 0xF142 LSB
@@ -34,22 +35,31 @@
  * 	reading (can not cause a new seek).   Any questions?   Regards,   Ken  R
  */
 
-#define HAWK_BYTES_PER_SECTOR 0x190 // 400 Bytes per Sector;
-#define HAWK_SECTORS_PER_TRACK 0x10 // 16 Sectors per Track
-#define HAWK_BYTES_PER_TRACK ( HAWK_BYTES_PER_SECTOR * HAWK_SECTORS_PER_TRACK ) // 6400 Bytes per Track
+#define HAWK_BYTES_PER_SECTOR CENTFS_BYTES_PER_SECTOR // 400 Bytes per Sector;
+#define HAWK_SECTORS_PER_TRACK CENTFS_SECTORS_PER_TRACK // 16 Sectors per Track
+#define HAWK_BYTES_PER_TRACK CENTFS_BYTES_PER_TRACK // 6400 Bytes per Track
 
 #define HAWK_CYLS 0x195 // 405 Cylinders
 #define HAWK_HEADS_PER_CYL 0x2 // 2 Heads
 #define HAWK_TRACKS ( HAWK_CYLS * HAWK_HEADS_PER_CYL ) // 810 Tracks
 #define HAWK_SECTORS ( HAWK_TRACKS * HAWK_SECTORS_PER_TRACK ) // 12960 Sectors
 #define HAWK_BYTES ( HAWK_SECTORS * HAWK_BYTES_PER_SECTOR ) // 5184000 Bytes
- 
-#define HAWK_SECTOR_TO_CHS_C(sector) ( (sector>>5) & 0x01ff )
-#define HAWK_SECTOR_TO_CHS_H(sector) ( (sector>>4) & 0x0001 )
-#define HAWK_SECTOR_TO_CHS_S(sector) ( (sector>>4) & 0x000f )
-#define HAWK_CHS_TO_SECTOR(c,h,s) ( (c<<5) | (h<<4) | (s<<0) )
 
-#define HAWK_SECTOR_TO_TRACK(sector) ( sector / HAWK_SECTOR_PER_TRACK )
+#define HAWK_CHS_C_BITPOS 5
+#define HAWK_CHS_H_BITPOS 4
+#define HAWK_CHS_S_BITPOS 0
+
+#define HAWK_CHS_C_BITMASK 0x01ff
+#define HAWK_CHS_H_BITMASK 0x0001
+#define HAWK_CHS_S_BITMASK 0x000f
+
+#define HAWK_SECTOR_TO_CHS_C(sector) ( (sector>>HAWK_CHS_C_BITPOS) & HAWK_CHS_C_BITMASK )
+#define HAWK_SECTOR_TO_CHS_H(sector) ( (sector>>HAWK_CHS_H_BITPOS) & HAWK_CHS_H_BITMASK )
+#define HAWK_SECTOR_TO_CHS_S(sector) ( (sector>>HAWK_CHS_S_BITPOS) & HAWK_CHS_S_BITMASK )
+#define HAWK_CHS_TO_SECTOR(c,h,s) ( (c<<HAWK_CHS_C_BITPOS) | (h<<HAWK_CHS_H_BITPOS) | (s<<HAWK_CHS_S_BITPOS) )
+ 
+
+#define HAWK_SECTOR_TO_TRACK(sector) CENTFS_SECTOR_TO_TRACK(sector)
 
 
 #define HAWK_BYTE_POS_TO_SECTOR(byte) ( byte / HAWK_BYTES_PER_SECTOR )

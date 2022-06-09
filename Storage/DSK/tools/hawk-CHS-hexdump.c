@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
-#include "DSK_hawk_format.h"
+#include "DSK-hawk-format.h"
 
 #define BYTES_PER_LINE 0x10
 
