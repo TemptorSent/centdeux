@@ -49,8 +49,12 @@
 #define HAWK_SECTOR_TO_CHS_S(sector) ( (sector>>4) & 0x000f )
 #define HAWK_CHS_TO_SECTOR(c,h,s) ( (c<<5) | (h<<4) | (s<<0) )
 
+#define HAWK_SECTOR_TO_TRACK(sector) ( sector / HAWK_SECTOR_PER_TRACK )
+
+
 #define HAWK_BYTE_POS_TO_SECTOR(byte) ( byte / HAWK_BYTES_PER_SECTOR )
 #define HAWK_BYTE_POS_TO_SECTOR_BYTE_OFFSET(byte) ( byte % HAWK_BYTES_PER_SECTOR )
+
 
 typedef union DSK_hawk_sector_address_t {
 	uint16_t sector;
