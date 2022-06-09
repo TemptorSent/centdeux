@@ -5,6 +5,7 @@
 #include <string.h>
 
 #define NATIVE_BLOCK_SIZE 400
+#define SECTORS_PER_TRACK 16
 
 static void usage(const char *progname) {
     printf("Usage: %s <input file> [512]\n", progname);
@@ -75,6 +76,25 @@ static unsigned short make_key(unsigned short seed)
     return BX ^ rotated;
 }
 
+/*
+ * Original algorithm from WIPL bootloader:
+ *
+ * 0293:    95 88 04     ld AX, +0x4(EX)	 ; sector_base + 4
+ * 0296:    44 10        xor AH, AL
+ * 0298:    d0 3c b1     ld BX, #0x3cb1	 ; The same magic constant as used for making the code
+ * 029b:    54 02        xor BX, AX
+ * 029d:    91 01 05     ld AX, (0x0105)	 ; entered_disk_code, which we now know is correct
+ * 02a0:    50 20        add AX, BX	 ; More mathemagic
+ * 02a2:    35 03        sll AX, 4
+ */
+static unsigned short calc_boot_dir_start(unsigned short encrypted, unsigned short code)
+{
+    unsigned short AX = encrypted ^ (encrypted << 8);
+    unsigned short BX = 0x3cb1 ^ AX;
+ 
+    return (code + BX) * SECTORS_PER_TRACK;
+}
+ 
 static int is_text(unsigned int offset, unsigned int length)
 {
     unsigned int i;
@@ -115,10 +135,15 @@ static int findBootFiles(unsigned int offset)
 	    char name[FILENAME_LENGTH + 1];
 	    
 	    strip0x80(name, buffer + offset, FILENAME_LENGTH);
-	    /* I don't know yet what these numbers are */
-	    printf("%s 0x%04x 0x%04x %0x04x\n", name, read_be16(offset + FILENAME_LENGTH),
-                                                      read_be16(offset + FILENAME_LENGTH + 2),
- 					              read_be16(offset + FILENAME_LENGTH + 4));
+	    /*
+	     * The second number here is sector number, from which supposedly
+	     * the file starts. The loading procedure isn't trivial, something like
+	     * block list may be involved.
+	     * I don't know the rest of details yet.
+	     */
+	    printf("%s 0x%02x %u 0x%02x\n", name, buffer[offset + FILENAME_LENGTH],
+                                                  read_be16(offset + FILENAME_LENGTH + 1),
+ 					          buffer[offset + FILENAME_LENGTH + 3]);
             num_files++;
 	}
 
@@ -133,8 +158,9 @@ static int findBootFiles(unsigned int offset)
  * Reverse engineed from the IPL bootstrap by Pavel Fedin <pavel_fedin@mail.ru>
  */
 int main(int argc, const char **argv) {
-    unsigned int sector = 14;
-    unsigned int name_offset = 16;
+    unsigned int sector;
+    unsigned int name_offset;
+    unsigned short key;
 
     if (argc < 2) {
 	usage(argv[0]);
@@ -151,13 +177,38 @@ int main(int argc, const char **argv) {
 	 return 255;
     }
 
-    readSector(sector);
+    readSector(14);
+    key = make_key(read_be16(6));
 
     /* Dump what we know from the header */
     printf("Disk format flag: 0x%02x - %s\n", buffer[8], buffer[8] == 0xFF ? "Correct" : "WRONG!");
-    printf("Disk code is: %u\n", make_key(read_be16(6)));
+    printf("Disk code is: %u\n", key);
 
-    /* Here we fully replicate what the IPL does */
+    /* Here we fully replicate what the IPL does */    
+    sector = calc_boot_dir_start(read_be16(4), key);
+    name_offset = 16;
+
+    /*
+     * Starting from the "sector" there is a list of bootable files,
+     * 16 bytes per entry. Let's call this a "boot directory".
+     * The first entry is skipped, from the image we have we suppose that's a
+     * volume name.
+     */
+    printf("Boot directory start sector: %u\n", sector);
+    
+    readSector(sector);
+
+    /* When loading a boot file, the WIPL treats all sector numbers
+       in the boot entry as relative to this. Let's call it a boot partition. */
+    printf("Boot partition start sector: %u\n", read_be16(14));
+
+    /*
+     * The IPL follows this exact algorithm searching for a boot file.
+     * It just keeps reading through sectors until it finds the file or
+     * hits the terminator word.
+     * In the image we have this terminator word precedes what we think is a
+     * data file entry.
+     */
     while (findBootFiles(name_offset)) {
 	readSector(++sector);
 	name_offset = 0;
