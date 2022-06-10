@@ -4,6 +4,8 @@
 # Credit: http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 
 $(DEPDIR): ; @mkdir -p $@
+$(BIN): ; @mkdir -p $@
+$(TOOLBIN): ; @mkdir -p $@
 
 DEPFILES := $(SRCS:%.c=$(DEPDIR)/%.d)
 $(DEPFILES):

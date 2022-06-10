@@ -19,9 +19,9 @@ FFC-uDecode: $(BIN)/FFC-uDecode$(EXE_EXT)
 
 $(LIB_ginsumatic):
 	make -C $(dir $@)
-	
 
-$(BIN)/FFC-uDecode$(EXE_EXT): $(SRCS_FFC_uDecode:%.c=obj/%.o) $(LIB_ginsumatic)
+
+$(BIN)/FFC-uDecode$(EXE_EXT): $(SRCS_FFC_uDecode:%.c=obj/%.o) $(LIB_ginsumatic) | $(BIN)
 	$(LINK.o) $^ $(LDLIBS) -o $@
 
 

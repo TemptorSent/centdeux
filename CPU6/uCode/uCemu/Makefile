@@ -16,7 +16,7 @@ all: $(TARGETS)
 $(CPU6_uCemu_TARGET): $(CPU6_uCemu_BIN)
 	printf "Building %s\n" $@
 
-$(CPU6_uCemu_BIN): $(CPU6_uCemu_SRCS:%.c=$(OBJDIR)/%.o)
+$(CPU6_uCemu_BIN): $(CPU6_uCemu_SRCS:%.c=$(OBJDIR)/%.o) | $(BIN)
 	$(LINK.o) $^ $(LDLIBS) -o $@
 
 
