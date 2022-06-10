@@ -26,10 +26,10 @@ INC_GENERATE = uCode_rom.h maprom_rom.h
 
 all: $(INC_GENERATE)
 
-$(TOOLBIN)/rom2include$(EXE_EXT):
+$(TOOLBIN)/rom2include$(EXE_EXT): | $(TOOLBIN)
 	make -C $(TOP)/tools/ROM-tools rom2include
 
-$(TOOLBIN)/romcat$(EXE_EXT):
+$(TOOLBIN)/romcat$(EXE_EXT): | $(TOOLBIN)
 	make -C $(TOP)/tools/ROM-tools romcat
 
 maprom_rom.h: $(TOOLBIN)/rom2include$(EXE_EXT) $(uC_MAPROM)

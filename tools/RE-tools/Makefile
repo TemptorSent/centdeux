@@ -10,9 +10,9 @@ EXES += $(addprefix $(TOOLBIN)/, $(SCRIPTS))
 .PHONY: all clean $(PROGS)
 
 
-all: $(EXES) 
+all: $(EXES)
 
-$(TOOLBIN)/%.sh: %.sh
+$(TOOLBIN)/%.sh: %.sh | $(TOOLBIN)
 	rm -f "$@"
 	cp "$<" "$@"
 	chmod 0755 "$@"

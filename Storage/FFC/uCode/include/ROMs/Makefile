@@ -40,10 +40,10 @@ INC_GENERATE = \
 
 all: $(INC_GENERATE)
 
-$(TOOLBIN)/rom2include$(EXE_EXT):
+$(TOOLBIN)/rom2include$(EXE_EXT): | $(TOOLBIN)
 	make -C $(TOP)/tools/ROM-tools rom2include
 
-$(TOOLBIN)/romcat$(EXE_EXT):
+$(TOOLBIN)/romcat$(EXE_EXT): | $(TOOLBIN)
 	make -C $(TOP)/tools/ROM-tools romcat
 
 FFC_AUX_F800_rom.h: $(FFC_AUX_F800_ROM) $(TOOLBIN)/rom2include$(EXE_EXT)
