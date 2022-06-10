@@ -26,7 +26,7 @@ void strip0x80(char * str, uint8_t n) {
 
 int main(int argc, char **argv) {
 	FILE *f;
-	fpos_t pos;
+	off_t pos;
 	cent_dirent_t dirent,*de;
 	uint32_t tsec, nsec, n;
 	char *fn=argv[argc-1];
@@ -46,14 +46,14 @@ int main(int argc, char **argv) {
 	do {
 		tsec=nsec;
 		pos=tsec*SECSIZE;
-		if(fsetpos(f,&pos)) {
-			fprintf(stderr,"Seek to 0x%llx failed\n",pos);
+		if(fseeko(f,pos,SEEK_SET)) {
+			fprintf(stderr,"Seek to 0x%lx failed\n",pos);
 			perror("fseek:");
 			fclose(f);
 			return(-1);
 		}
 		if(!fread(de,sizeof(*de),1,f)) {
-			fprintf(stderr,"Read dirent at 0x%llx failed\n",pos);
+			fprintf(stderr,"Read dirent at 0x%lx failed\n",pos);
 			perror("fread:");
 			fclose(f);
 			return(-1);
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 		strip0x80(de->filename,10);
 		strip0x80(de->diskname,10);
 
-		printf("Sector: 0x%06llx\n",pos/0x190);
+		printf("Sector: 0x%06lx\n",pos/0x190);
 		printf("Volume Name: '%.10s'\n", de->volname);
 		printf("File Name: '%.10s'\n", de->filename);
 		printf("Disk Name: '%.10s'\n", de->diskname);
