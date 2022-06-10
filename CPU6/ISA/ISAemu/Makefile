@@ -14,7 +14,7 @@ BINS = $(CPU6_ISAemu_BIN)
 
 .PHONY: all clean depclean $(TARGETS)
 
-all: $(GEN_INCS) $(TARGETS) 
+all: $(GEN_INCS) $(TARGETS)
 
 
 $(CPU6_ISAemu_GEN_INC): $(CPU6_ISAemu_SRCS)
@@ -23,7 +23,7 @@ $(CPU6_ISAemu_GEN_INC): $(CPU6_ISAemu_SRCS)
 $(CPU6_ISAemu_TARGET): $(CPU6_ISAemu_BIN)
 	@:
 
-$(CPU6_ISAemu_BIN): $(CPU6_ISAemu_SRCS:%.c=$(OBJDIR)/%.o)
+$(CPU6_ISAemu_BIN): $(CPU6_ISAemu_SRCS:%.c=$(OBJDIR)/%.o) | $(BIN)
 	@printf "Building %s\n" $@
 	$(LINK.o) $^ $(LDLIBS) -o $@
 
