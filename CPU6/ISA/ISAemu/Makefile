@@ -1,7 +1,7 @@
 TOP := ../../..
 include ../CPU6-ISA-common.mk
 
-CFLAGS += -fkeep-inline-functions -finline-limit=1200 -O2 -Winline
+CFLAGS += -fkeep-inline-functions -finline-limit=2000 --param large-function-growth=2000 -O2 -Winline
 CPU6_ISAemu_TARGET := CPU6-ISAemu
 CPU6_ISAemu_BIN := $(BIN)/$(CPU6_ISAemu_TARGET)$(EXE_EXT)
 CPU6_ISAemu_SRCS := CPU6-ISAemu.c
