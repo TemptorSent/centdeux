@@ -5,9 +5,9 @@ PROGS := hawk-CHS-hexdump
 SRCS := $(addsuffix .c, $(PROGS))
 LIST := $(addprefix $(TOOLBIN)/, $(PROGS))
 EXES := $(addsuffix $(EXE_EXT), $(LIST))
-SCRIPTS :=
+SCRIPTS := od_hawk-CHS.sh
 EXES += $(addprefix $(TOOLBIN)/, $(SCRIPTS))
-.PHONY: all clean $(PROGS)
+.PHONY: all clean $(PROGS) $(SCRIPTS)
 
 
 all: $(EXES)
