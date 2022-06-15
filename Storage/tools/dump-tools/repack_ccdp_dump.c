@@ -9,6 +9,7 @@ int main(int argc, char **argv) {
 		c=fgetc(fin);
 		if(feof(fin)) { break;}
 		if( o++ % fblk < cblk) { fputc(c,fout); }
+		else if( c==0 && o % fblk == cblk+1 ) { fprintf(stderr, "Bad sector 0x%06lx\n",o/fblk); }
 	}
 	return(0);
 

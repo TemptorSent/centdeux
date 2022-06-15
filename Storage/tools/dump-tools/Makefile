@@ -5,7 +5,7 @@ PROGS := repack_ccdp_dump
 SRCS := $(addsuffix .c, $(PROGS))
 LIST := $(addprefix $(TOOLBIN)/, $(PROGS))
 EXES := $(addsuffix $(EXE_EXT), $(LIST))
-SCRIPTS := od_centurionCHS.sh
+SCRIPTS :=
 EXES += $(addprefix $(TOOLBIN)/, $(SCRIPTS))
 .PHONY: all clean $(PROGS)
 
