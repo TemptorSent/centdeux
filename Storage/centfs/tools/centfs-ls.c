@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct cent_dirent_t {
 	char volname[10];
@@ -17,7 +18,7 @@ typedef struct cent_dirent_t {
 	uint8_t b3d_3f[4];
 } cent_dirent_t;
 
-#define SECSIZE 0x190
+uint32_t sector_size = 400;
 
 void strip0x80(char * str, uint8_t n) {
 	for(int i=0; i<n; i++) {
@@ -29,7 +30,8 @@ int main(int argc, char **argv) {
 	FILE *f;
 	off_t pos;
 	cent_dirent_t dirent,*de;
-	uint32_t tsec, nsec, n;
+	uint32_t nsec = 16;
+	uint32_t tsec, n;
 	char *fn=argv[argc-1];
 
 	de=&dirent;
@@ -40,13 +42,19 @@ int main(int argc, char **argv) {
 		return(-1);
 	}
 
-	if(argc > 2) { nsec=strtol(argv[1],NULL,0); }
-	else { nsec=0x10; }
+        for (int i = 1; i < argc - 1; i++) {
+	    if (!strcmp(argv[i], "--ccdp")) {
+	        printf("Using 512 bytes per block (CCDP format)\n");
+	        sector_size = 512;
+	    } else {
+	        nsec=strtol(argv[i],NULL,0);
+	    }
+	}
 
 	n=0;
 	do {
 		tsec=nsec;
-		pos=tsec*SECSIZE;
+		pos=tsec * sector_size;
 		if(fseeko(f,pos,SEEK_SET)) {
 			fprintf(stderr,"Seek to 0x%lx failed\n",pos);
 			perror("fseek:");
@@ -67,8 +75,7 @@ int main(int argc, char **argv) {
 		strip0x80(de->diskname,10);
 		strip0x80(de->seqnum,2);
 
-		printf("Sector: 0x%06lx\n",pos/0x190);
-
+		printf("Sector: 0x%06x\n", tsec);
 		printf("Volume Name: '%.10s'\n", de->volname);
 
 		printf(" 6 bytes (0x0a-0x0f):");
