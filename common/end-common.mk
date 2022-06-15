@@ -6,6 +6,8 @@
 $(DEPDIR): ; @mkdir -p $@
 $(BIN): ; @mkdir -p $@
 $(TOOLBIN): ; @mkdir -p $@
+$(COMMON_INC_DIR): ; @mkdir -p $@
+$(COMMON_LIB_DIR): ; @mkdir -p $@
 
 DEPFILES := $(SRCS:%.c=$(DEPDIR)/%.d)
 $(DEPFILES):

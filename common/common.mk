@@ -14,9 +14,16 @@ TOOLBIN ?= $(TOP)/tools/bin
 # Set path for top level common dir
 COMMON_DIR = $(TOP)/common
 
-# Add common includes to list of include dirs and add CFLAGS for them
-INC_DIRS += $(COMMON_DIR)/include
+# Set common include and lib paths
+COMMON_INC_DIR = $(TOP)/common/include
+COMMON_LIB_DIR = $(TOP)/common/lib
+
+# Add common includes/libs to list of include/libs dirs and add CFLAGS for them
+INC_DIRS += $(COMMON_INC_DIR)
 INC_PARAMS = $(addprefix -I, $(INC_DIRS))
+LIB_DIR += $(COMMON_LIB_DIR)
+LIB_PARAMS = $(addprefix -L, $(LIB_DIRS))
+
 CFLAGS += $(INC_PARAMS)
 
 # Detect our OS
