@@ -1,5 +1,5 @@
 TOP := ../../..
-include $(TOP)/common/common.mk
+include ../centfs-common.mk
 
 PROGS := centfs-ls centboot
 SRCS := $(addsuffix .c, $(PROGS))
@@ -25,4 +25,4 @@ clean:
 	rm -f *.o $(EXES)
 
 
-include $(TOP)/common/end-common.mk
+include ../centfs-end-common.mk
