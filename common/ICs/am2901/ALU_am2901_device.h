@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "types-common.h"
+#include "../common/clockline.h"
 
 enum am2901_source_operand_code { AQ=00, AB=01, ZQ=02, ZB=03, ZA=04, DA=05, DQ=06, DZ=07 };
 static char am2901_source_operands[8][2] = { {'A','Q'},{'A','B'},{'0','Q'},{'0','B'},{'0','A'},{'D','A'},{'D','Q'},{'D','0'}};
@@ -33,20 +34,8 @@ static char am2901_destinations[8][9] = {
 	{'F', 1,'D','O','I', 1,'D','O','I'}, /* RAMQD, F/2->B, Q/2->Q, Y=F */
 	{'F', 1,'D','O','I', 0,'D','O','Z'}, /* RAMD, F/2->B, Y=F */
 	{'F', 1,'U','I','O', 1,'U','I','O'}, /* RAMQU, F*2->B, Q*2->Q, Y=F */
-	{'F', 1,'U','I','O', 0,'U','Z','O'}  /* RAMU, F*2->B, Y=F */
+	{'F', 1,'U','I','O', 0,'U','Z','O'} /* RAMU, F*2->B, Y=F */
 };
-
-/* Inputs */
-typedef struct am2901_input_t {
-	/* Carry-in Input */
-	bit_t Cin; /* Carry-in */
-
-	/* External data input */
-	nibble_t D; /* Direct data input */
-
-	/* Output Enable */
-	bit_t OE_; /* Output Enable (Active LOW) HiZ=1 */
-} am2901_input_t;
 
 typedef struct am2901_inst_t {
 	/* Dual-ported RAM Addresses */
@@ -66,63 +55,38 @@ typedef struct am2901_shifter_t {
 	unsigned char msb_dir, lsb_dir; /* Directions for msb and lsb pins on this shifter */
 } am2901_shifter_t;
 
-typedef struct am2901_flags_t {
-	bit_t Cout; /* Carry-out */
-	bit_t OVR; /* Overflow flag */
-	bit_t FZ; /* Zero flag output */
-	bit_t F3; /* High bit set (Negitive) flag output */
-} am2901_flags_t;
-
-typedef struct am2901_lookahead_t {
-	bit_t P_; /* Propagate signal */
-	bit_t G_; /* Generate signal */
-} am2901_lookahead_t;
-
-
-/* Outputs */
-typedef struct am2901_output_t {
+typedef struct am2901_device_output_t {
+	/* Outputs */
 	/* Result Flags */
-	am2901_flags_t *flags;
+	bit_t *Cout; /* Carry-out */
+	bit_t *OVR; /* Overflow flag */
+	bit_t *FZ; /* Zero flag output */
+	bit_t *F3; /* High bit set (Negitive) flag output */
 
 	/* Look ahead carry signals */
-	am2901_lookahead_t *lookahead;
+	bit_t *P_; /* Propagate signal */
+	bit_t *G_; /* Generate signal */
 
 	/* Result */
-	nibble_t Y; /* Output value */
+	nibble_t *Y; /* Output value */
 
-} am2901_output_t;
+} am2901_device_output_t;
 
-/* Internal state */
-typedef struct am2901_internal_t {
-	/* Internal State */
-	/* RAM Register file */
-	nibble_t RAM[16]; /* Register file with 16 x 4-bit words of RAM */
-	nibble_t A; /* Value in A Latch */
-	nibble_t B; /* Value in B Latch */
-	bit_t RAM_WE; /* RAM data write enable */
+typedef struct am2901_device_input_t {
+	/* Carry-in Input */
+	bit_t *Cin; /* Carry-in */
 
-	/* Q Register */
-	nibble_t Q; /* Output data from Q Register */
-	bit_t Q_WE; /* Q data write enable */
+	/* External data input */
+	nibble_t *D; /* Direct data input */
 
-	/* Source MUXes */
-	unsigned char Rmux; /* R Operand MUX select ('Z'ero (0),'D','A') */
-	unsigned char Smux; /* S Operand MUX select ('Z'ero (0),'A','B','Q') */
-
-	/* ALU Result */
-	nibble_t F; /* Result from ALU */
-
-	/* Output MUX */
-	unsigned char Ymux; /* Y MUX output source select ('F' or 'A') */
+	/* Output Enable */
+	bit_t *OE_; /* Output Enable (Active LOW) HiZ=1 */
 
 
-} am2901_internal_t;
+} am2901_device_input_t;
 
-/* Core */
-typedef struct am2901_core_t {
-	/* Internal state */
-	am2901_internal_t internal;
-
+typedef struct am2901_device_t {
+	clock_state_t *clk;
 	char *id; /* Identifier for this device */
 
 	/* Instruction Input */
@@ -140,9 +104,48 @@ typedef struct am2901_core_t {
 	/* Output struct */
 	am2901_output_t *out;
 
-} am2901_core_t;
+
+	/* Internal State */
+
+	/* RAM Register file */
+	nibble_t RAM[16]; /* Register file with 16 x 4-bit words of RAM */
+	nibble_t A; /* Value in A Latch */
+	nibble_t B; /* Value in B Latch */
+	bit_t RAM_WE; /* RAM data write enable */
+
+	/* Q Register */
+	nibble_t Q; /* Output data from Q Register */
+	bit_t Q_EN; /* Q data write enable */
+
+	/* Source MUXes */
+	unsigned char Rmux; /* R Operand MUX select ('Z'ero (0),'D','A') */
+	unsigned char Smux; /* S Operand MUX select ('Z'ero (0),'A','B','Q') */
+
+	/* ALU Result */
+	nibble_t F; /* Result from ALU */
+
+	/* Output MUX */
+	unsigned char Ymux; /* Y MUX output source select ('F' or 'A') */
 
 
-int am2901_core_init(am2901_core_t *core, char* id);
+} am2901_device_t;
 
 
+int am2901_device_init(am2901_device_t *dev, char* id,
+	clock_state_t *clk, /* Clock state from clockline */
+	/* Instruction struct */
+	am2901_inst_t *inst,
+
+	/* Input struct */
+	am2901_input_t *in;
+
+	/* RAM input shifter */
+	am2901_shifter_t *RAM_shift,
+	/* Q input shifter */
+	am2901_shifter_t *Q_shift,
+
+	/* Output struct */
+	am2901_output_t *out;
+);
+
+char *am2901_device_update(am2901_device_t *dev);

@@ -7,6 +7,8 @@ a.out
 .*.swp
 *.exe
 *.stackdump
+*.so
+*.lib
 .tmp
 bin/
 tools/bin/
