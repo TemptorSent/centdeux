@@ -57,7 +57,9 @@ typedef struct cent_dirent_t {
 	uint8_t map_entry;
 	uint8_t map_sector[2];
 	uint8_t filetype;
-	uint8_t b20_2d[13];
+	uint8_t b20_23[4];
+	uint8_t length;             /* Length of file (data portion only) in sectors */
+	uint8_t b25_2d[8];
 	uint8_t next_sector[2];
 	uint8_t b2f;
 	char diskname[10];
@@ -102,7 +104,7 @@ int main(int argc, char **argv) {
 	    }
 	}
 
-	printf("Sector   Volume     File       Disk       Type MapStart MapSector MapEntry\n");
+	printf("Sector   Length   Volume     File       Disk       Type MapStart MapSector MapEntry\n");
 
 	n=0;
 	do {
@@ -127,7 +129,8 @@ int main(int argc, char **argv) {
 		strip0x80(de->diskname,10);
 		strip0x80(de->seqnum,2);
 
-		printf("0x%06x %.10s %.10s %.10s 0x%02x 0x%06x 0x%06x  %d\n", tsec, de->volname, de->filename, de->diskname,
+		printf("0x%06x 0x%06x %.10s %.10s %.10s 0x%02x 0x%06x 0x%06x  %d\n", tsec, de->length,
+		       de->volname, de->filename, de->diskname,
 		       de->filetype, read_be16(de->map_start_sector), read_be16(de->map_sector), de->map_entry);
 
 		if(!nsec) {
