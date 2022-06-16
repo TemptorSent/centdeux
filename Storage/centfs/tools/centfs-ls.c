@@ -5,9 +5,10 @@
 typedef struct cent_dirent_t {
 	char volname[10];
 	uint8_t b0a_0f[6];
-	uint8_t filetype[2];
+	uint8_t filemark[2];
 	char filename[10];
-	uint8_t b1c_1f[4];
+	uint8_t b1c_1e[3];
+	uint8_t filetype;
 	uint8_t b20_2d[13];
 	uint8_t next_sector[2];
 	uint8_t b2f;
@@ -74,13 +75,15 @@ int main(int argc, char **argv) {
 		for(int i=0; i<6; i++) { printf("  0x%02x",de->b0a_0f[i]); }
 		printf("\n");
 
-		printf("File type: 0x%02x%02x\n", de->filetype[0], de->filetype[1]);
+		printf("File Mark: 0x%02x%02x\n", de->filemark[0], de->filemark[1]);
 
 		printf("File Name: '%.10s'\n", de->filename);
 
-		printf(" 4 bytes (0x1c-0x1f):");
-		for(int i=0; i<4; i++) { printf("  0x%02x",de->b1c_1f[i]); }
+		printf(" 3 bytes (0x1c-0x1e):");
+		for(int i=0; i<3; i++) { printf("  0x%02x",de->b1c_1e[i]); }
 		printf("\n");
+
+		printf("File type: 0x%02x\n", de->filetype);
 
 		printf("13 bytes (0x20-0x2d):");
 		for(int i=0; i<13; i++) { printf("  0x%02x",de->b20_2d[i]); }
