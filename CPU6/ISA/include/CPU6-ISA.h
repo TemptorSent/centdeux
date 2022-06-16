@@ -27,17 +27,37 @@ enum CPU6_AMODE_GROUPS {
 	AMODEG_NONE=0x0,
 	AMODEG_DISP,
 	AMODEG_ALU1,
+	AMODEG_ALU1W,
 	AMODEG_ALU2,
 	AMODEG_ALU2W,
 	AMODEG_MEM,
 	AMODEG_EXT
 };
 
+enum CPU6_AMODES_ALU1W {
+	AMODE_ALU1W_SRC_REG_A=0x0,
+	AMODE_ALU1W_SRC_DIR=0x1,
+	AMODE_ALU1W_SRC_REG_B=0x2,
+	AMODE_ALU1W_SRC_IDX_B=0x3,
+	AMODE_ALU1W_SRC_REG_X=0x4,
+	AMODE_ALU1W_SRC_IDX_X=0x5,
+	AMODE_ALU1W_SRC_REG_Y=0x6,
+	AMODE_ALU1W_SRC_IDX_Y=0x7,
+	AMODE_ALU1W_SRC_REG_Z=0x8,
+	AMODE_ALU1W_SRC_IDX_Z=0x9,
+	AMODE_ALU1W_SRC_REG_S=0xa,
+	AMODE_ALU1W_SRC_IDX_S=0xb,
+	AMODE_ALU1W_SRC_REG_C=0xc,
+	AMODE_ALU1W_SRC_IDX_C=0xd,
+	AMODE_ALU1W_SRC_REG_P=0xe,
+	AMODE_ALU1W_SRC_IDX_P=0xf,
+};
+
 enum CPU6_AMODES_ALU2W {
-	AMODE_ALU2W_SR_DR=0x0,
-	AMODE_ALU2W_SR_DIR=0x1,
-	AMODE_ALU2W_SR_LIT=0x2,
-	AMODE_ALU2W_SR_IDX=0x3
+	AMODE_ALU2W_SRC_REG=0x0,
+	AMODE_ALU2W_SRC_DIR=0x1,
+	AMODE_ALU2W_SRC_LIT=0x2,
+	AMODE_ALU2W_SRC_IDX_DISP=0x3
 };
 
 
@@ -45,8 +65,8 @@ enum CPU6_AMODES_MEM {
 	AMODE_MEM_LIT=0x0,
 	AMODE_MEM_DIR=0x1,
 	AMODE_MEM_IND=0x2,
-	AMODE_MEM_DIR_DISP=0x3,
-	AMODE_MEM_IND_DISP=0x4,
+	AMODE_MEM_PCREL_DIR=0x3,
+	AMODE_MEM_PCREL_IND=0x4,
 	AMODE_MEM_IDX=0x5,
 	AMODE_MEM_IMPL_IDX_A=0x8,
 	AMODE_MEM_IMPL_IDX_B=0x9,
@@ -65,12 +85,19 @@ enum CPU6_AMODES_IDX {
 	AMODE_IDX_IND=0x4,
 	AMODE_IDX_IND_INC=0x5,
 	AMODE_IDX_IND_DEC=0x6,
-	AMODE_IDX_DIR_DISP=0x8,
-	AMODE_IDX_DIR_DISP_INC=0x9,
-	AMODE_IDX_DIR_DISP_DEC=0xa,
-	AMODE_IDX_IND_DISP=0xc,
-	AMODE_IDX_IND_DISP_INC=0xd,
-	AMODE_IDX_IND_DISP_DEC=0xe
+	AMODE_IDX_DISP_DIR=0x8,
+	AMODE_IDX_DISP_DIR_INC=0x9,
+	AMODE_IDX_DISP_DIR_DEC=0xa,
+	AMODE_IDX_DISP_IND=0xc,
+	AMODE_IDX_DISP_IND_INC=0xd,
+	AMODE_IDX_DISP_IND_DEC=0xe
+};
+
+enum CPU6_AMODE_EXT {
+	AMODE_EXT_DIR=0x0,
+	AMODE_EXT_IDX_P_2R_DISP=0x1,
+	AMODE_EXT_REG=0x2,
+	AMODE_EXT_LIT=0x3
 };
 
 enum CPU6_FLAGS {
@@ -154,7 +181,7 @@ typedef const struct ISA_inst_group_t {
 
 } ISA_inst_group_t;
 
-typedef const union ISA_amode_idx_t {
+typedef union ISA_amode_idx_t {
 	byte_t	byte;
 	struct {
 		byte_t inc:1;
@@ -165,12 +192,71 @@ typedef const union ISA_amode_idx_t {
 	};
 } ISA_amode_idx_t;
 
-typedef union ISA_amode_alu2w_t {
+typedef union ISA_amode_alu1_arg_t {
 	byte_t byte;
 	struct {
-		byte_t sr:3;
-		byte_t sx1:1;
-		byte_t dr:3;
-		byte_t sx0:1;
+		byte_t val:4;
+		byte_t reg:4;
 	};
-} ISA_amode_alu2w_t;
+	struct {
+		byte_t :4;
+		byte_t sx:1;
+		byte_t regw:3;
+	};
+} ISA_amode_alu1_arg_t;
+
+typedef union ISA_amode_alu2_arg_t {
+	byte_t byte;
+	struct {
+		byte_t dr:4;
+		byte_t sr:4;
+	};
+	struct {
+		byte_t sx0:1;
+		byte_t drw:3;
+		byte_t sx1:1;
+		byte_t srw:3;
+	};
+} ISA_amode_alu2_arg_t;
+
+typedef union ISA_amode_ext_subop4_amodes22_t {
+	byte_t byte;
+	struct {
+		byte_t subop:4;
+		byte_t amode0:2;
+		byte_t amode1:2;
+	};
+} ISA_amode_ext_subop4_amodes22_t;
+
+typedef union ISA_amode_ext_reg4_subop4_t {
+	byte_t byte;
+	struct {
+		byte_t reg:4;
+		byte_t subop:4;
+	};
+} ISA_amode_ext_reg4_subop4_t;
+
+typedef union ISA_amode_ext_arglens44_t {
+	byte_t byte;
+	struct {
+		byte_t arglen0:4;
+		byte_t arglen1:4;
+	};
+} ISA_amode_ext_arglens44_t;
+
+typedef union ISA_amode_ext_bigmath_t {
+	word_t word;
+	byte_t bytes[2];
+	struct {
+		ISA_amode_ext_arglens44_t arglens44;
+		ISA_amode_ext_subop4_amodes22_t subop4_amodes22;
+	};
+	struct {
+		word_t len0:4;
+		word_t len1:4;
+		word_t subop:4;
+		word_t amode0:2;
+		word_t amode1:2;
+	};
+} ISA_amode_ext_bigmath_t;
+

@@ -339,11 +339,11 @@ U_t UK11= {
 
 
 /* Decoder UH11 - 74LS138 */
-/* E1_,E2_=ClockB1_?; E3: Tied HI? */
+/* E1_,E2_: Tied GND; E3: Tied HI */
 /* A<2:0>=uIW<12:10> (014:012)*/
 U_en_list_t D_UH11_en={
-	{ .bit=0, .src=SRC_ClockB1_, .LO={.d="UH11.E1_ (ClockB1_)"}},
-	{ .bit=1, .src=SRC_ClockB1_, .LO={.d="UH11.E2_ (ClockB1_)"}},
+	{ .bit=0, .src=SRC_FORCE, .force=0, .HI={.d="UH11.E1_ (GND)"}},
+	{ .bit=1, .src=SRC_FORCE, .force=0, .HI={.d="UH11.E2_ (GND)"}},
 	{ .bit=2, .src=SRC_FORCE, .force=1, .HI={.d="UH11.E3 (+5)"}},
 	{}
 };
@@ -355,26 +355,26 @@ U_sel_list_t D_UH11_sel={
 	{}
 };
 U_out_list_t D_UH11_out={ // Decoder H11
-	{.sig=SIG_UH11_CLK_O0_, .LO={.d="H11.0 (Unknown Clock Output)"}},
-	{.sig=SIG_UH11_CLK_O1_, .LO={.d="H11.1 (Unknown Clock Output)"}},
-	{.sig=SIG_UH11_CLK_O2_, .LO={.d="H11.2 (Unknown Clock Output - ?DBE_ and WTIN?)"}},
-	{.sig=SIG_CLK_WrR_WAR_MSB_,
-		.LO={.d="H11.3 CLOCKED WRITE TO WORKING ADDRESS REGISER MSB <- (IA-Bus/R-Bus) (Clock.WrR_WAR_MSB)"}},
-	{.sig=SIG_UH11_CLK_O4_, .LO={.d="H11.4 (Unknown Clock Output)"}},
+	{.sig=SIG_UH11_O0_, .LO={.d="H11.0 (Unknown Output)"}},
+	{.sig=SIG_UH11_O1_, .LO={.d="H11.1 (Unknown Output)"}},
+	{.sig=SIG_UH11_O2_, .LO={.d="H11.2 (Unknown Output - ?DBE_ and WTIN?)"}},
+	{.sig=SIG_WrR_WAR_MSB_,
+		.LO={.d="H11.3 WRITE TO WORKING ADDRESS REGISER MSB <- (IA-Bus/R-Bus) (WrR_WAR_MSB)"}},
+	{.sig=SIG_UH11_O4_, .LO={.d="H11.4 (Unknown Output)"}},
 
-	{.sig=SIG_UH11_CLK_O5_, .LO={.d="H11.5 (Increment MAR Counter?)"}},
-	{.sig=SIG_CLK_Rd_MAPROM_,
-		.LO={.d="H11.6 CLOCKED READ MAPPING PROM -> (F-Bus)"},
+	{.sig=SIG_UH11_O5_, .LO={.d="H11.5 (Increment MAR Counter?)"}},
+	{.sig=SIG_Rd_MAPROM_,
+		.LO={.d="H11.6 READ MAPPING PROM -> (F-Bus)"},
 		.HI={.d="H11.6 READ ALU RESULT -> (F-Bus)"}},
-	{.sig=SIG_CLK_WrR_NSWAPR_, .LO={.d="H11.7 CLOCKED WRITE NIBBLE SWAP REGISTER <- (DP-Bus) (NSWAPR)"}},
+	{.sig=SIG_WrR_NSWAPR_, .LO={.d="H11.7 WRITE NIBBLE SWAP REGISTER <- (DP-Bus) (NSWAPR)"}},
 	{}
 };
 IC_decoder_t D_UH11= {
 };
 
 U_t UH11= {
-	.name="D_UH11_CLK_SEL0",
-	.d="Clocked Output Select Decoder 0",
+	.name="D_UH11_OUT_SEL0",
+	.d="Output Select Decoder 0",
 	.col='H',
 	.row=11,
 	.en=&D_UH11_en,

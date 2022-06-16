@@ -60,7 +60,6 @@ static inline int CPU6_MEM_ST_decode(CPU6_machine_t *m, bit_t opw, byte_t amode,
 static inline int CPU6_fetch_byte_amode_mem(CPU6_machine_t *m, byte_t amode);
 static inline int CPU6_fetch_word_amode_mem(CPU6_machine_t *m, byte_t amode);
 static inline int CPU6_fetch_addr_amode_mem(CPU6_machine_t *m, byte_t amode);
-static inline int CPU6_inst_2e(CPU6_machine_t *m);
-static inline int CPU6_inst_2f(CPU6_machine_t *m);
-static inline int CPU6_ALU_op1r(CPU6_machine_t *m, bit_t opw, byte_t op, int dr);
+static inline int CPU6_fetch_addr_amode_idx(CPU6_machine_t *m);
+static inline int CPU6_ALU_op1r(CPU6_machine_t *m, bit_t opw, byte_t op, int reg);
 static inline int CPU6_ALU_op2r(CPU6_machine_t *m, bit_t opw, byte_t op, int sr, int dr);

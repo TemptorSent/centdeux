@@ -4,6 +4,14 @@
 #include "CPU6-machine.h"
 #include "CPU6-ISAemu_generated.h"
 
+#define OPINFO_FP stderr
+#define opinfo(...) fprintf(OPINFO_FP, __VA_ARGS__ )
+
+#define CPU6_ASSERTION(...) \
+	do { \
+		fprintf(stderr, "CPU6_ASSERTION - %s#%d:", __FILE__, __LINE__); \
+		fprintf(stderr, __VA_ARGS__); \
+	} while(0)
 
 /*
  * Bus functions
@@ -82,26 +90,26 @@ static inline int CPU6_delay(CPU6_machine_t *m) {
  *
 */
 static inline int CPU6_set_flags(CPU6_machine_t *m, enum CPU6_FLAGS f) {
-	m->flags |= f;
+	m->flags.value |= f;
 	return(0);
 }
 
 static inline int CPU6_clear_flags(CPU6_machine_t *m, enum CPU6_FLAGS f) {
-	m->flags &= ~(f);
+	m->flags.value &= ~(f);
 	return(0);
 }
 
 static inline int CPU6_toggle_flags(CPU6_machine_t *m, enum CPU6_FLAGS f) {
-	m->flags ^= f;
+	m->flags.value ^= f;
 	return(0);
 }
 
 static inline int CPU6_check_flags_set(CPU6_machine_t *m, enum CPU6_FLAGS f) {
-	return( ((m->flags & f)==f)? 1 : 0 );
+	return( ((m->flags.value & f)==f)? 1 : 0 );
 }
 
 static inline int CPU6_check_flags_clear(CPU6_machine_t *m, enum CPU6_FLAGS f) {
-	return( (m->flags & f)? 0 : 1 );
+	return( (m->flags.value & f)? 0 : 1 );
 }
 
 
@@ -275,7 +283,7 @@ static inline int CPU6_return_int(CPU6_machine_t *m, char mode) {
 		case 'M':
 			regC=CPU6_get_reg16(m,C6_REG_C);
 			regCn= BYTES_TO_WORD(
-				NIBBLES_TO_BYTE( m->flags, BYTE_LSN(WORD_MSB(regC)) ),
+				NIBBLES_TO_BYTE( m->flags.value, BYTE_LSN(WORD_MSB(regC)) ),
 				NIBBLES_TO_BYTE( BYTE_MSN(WORD_LSB(regC)), m->MAP )
 			);
 			CPU6_set_reg16(m, C6_REG_C, regCn);
@@ -437,38 +445,176 @@ static inline int CPU6_MEM_ST_decode(CPU6_machine_t *m, bit_t opw, byte_t amode,
 
 
 static inline int CPU6_fetch_byte_amode_mem(CPU6_machine_t *m, byte_t amode) {
-
-	return(0);
+	return( CPU6_MEM_read_byte(m, CPU6_fetch_addr_amode_mem(m,amode) ) );
 }
 
 static inline int CPU6_fetch_word_amode_mem(CPU6_machine_t *m, byte_t amode) {
-	return(0);
+	return( CPU6_MEM_read_word(m, CPU6_fetch_addr_amode_mem(m,amode) ) );
 }
 
 static inline int CPU6_fetch_addr_amode_mem(CPU6_machine_t *m, byte_t amode) {
+	switch(amode) {
+		case AMODE_MEM_LIT: return(m->PC);
+		case AMODE_MEM_DIR: return( CPU6_fetch_word(m) );
+		case AMODE_MEM_IND: return( CPU6_MEM_read_word(m, CPU6_fetch_word(m) ) );
+		case AMODE_MEM_PCREL_DIR: return( (word_t)( m->PC + (int8_t)CPU6_fetch_byte(m) ) );
+		case AMODE_MEM_PCREL_IND: return( CPU6_MEM_read_word(m, (word_t)( m->PC + (int8_t)CPU6_fetch_byte(m) ) ) );
+		case AMODE_MEM_IDX: return( CPU6_fetch_addr_amode_idx(m) );
+		case AMODE_MEM_IMPL_IDX_A: return( CPU6_get_reg16(m,C6_REG_A) );
+		case AMODE_MEM_IMPL_IDX_B: return( CPU6_get_reg16(m,C6_REG_B) );
+		case AMODE_MEM_IMPL_IDX_X: return( CPU6_get_reg16(m,C6_REG_X) );
+		case AMODE_MEM_IMPL_IDX_Y: return( CPU6_get_reg16(m,C6_REG_Y) );
+		case AMODE_MEM_IMPL_IDX_Z: return( CPU6_get_reg16(m,C6_REG_Z) );
+		case AMODE_MEM_IMPL_IDX_S: return( CPU6_get_reg16(m,C6_REG_S) );
+		case AMODE_MEM_IMPL_IDX_C: return( CPU6_get_reg16(m,C6_REG_C) );
+		case AMODE_MEM_IMPL_IDX_P: return( CPU6_get_reg16(m,C6_REG_P) );
+
+	}
 	return(0);
 }
 
+static inline int CPU6_fetch_addr_amode_idx(CPU6_machine_t *m) {
+	ISA_amode_idx_t idx;
+	word_t regval, ea;
+	byte_t disp=0;
+	/* Fetch our argument byte */
+	idx.byte=CPU6_fetch_byte(m);
+	/* If we're using a displacement mode, fetch the displacement byte */
+	if(idx.displacement) { disp=CPU6_fetch_byte(m); }
 
-static inline int CPU6_inst_2e(CPU6_machine_t *m) {
-	return(0);
+	/* Read the value from our register */
+	regval=CPU6_get_reg16(m,idx.reg);
+
+	/* Predecrement if requested */
+	if(idx.dec) { regval--; CPU6_set_reg16(m,idx.reg, regval); }
+
+	/* Calculate our effective address */
+	ea=regval+disp;
+
+	/* Get indirect effective address if requested */
+	if(idx.indirect) { ea=CPU6_MEM_read_word(m,ea); }
+
+	/* Post increment if requested */
+	if(idx.inc) { regval++; CPU6_set_reg16(m,idx.reg, regval); }
+
+	return(ea);
 }
 
-static inline int CPU6_inst_2f(CPU6_machine_t *m) {
-	return(0);
-}
 
 
 /*
  * ALU functions
  *
 */
-static inline int CPU6_ALU_op1r(CPU6_machine_t *m, bit_t opw, byte_t op, int dr) {
+static inline int CPU6_ALU_op1r(CPU6_machine_t *m, bit_t opw, byte_t op, int reg) {
+	ISA_amode_alu1_arg_t arg={};
+	word_t abase=0;
+	byte_t inb=0;
+	word_t inw=0;
+
+	/* Takes explicit register */
+	if(reg<0) {
+		arg.byte=CPU6_fetch_byte(m);
+		reg=arg.reg;
+		/* Word operation */
+		if(opw) {
+			reg=arg.regw<<1;
+			/* Extended addressing modes for word operations when low bit of sr is 1 */
+			if(arg.sx) {
+				abase=CPU6_fetch_word(m);
+				/* Register indexed when sr > 0, direct address when 0 */
+				if(arg.regw) {
+					inw=CPU6_MEM_read_byte(m, abase+(int16_t)CPU6_get_reg16(m,reg) );
+				} else {
+					inw=CPU6_MEM_read_byte(m, abase);
+				}
+			} else { inw=CPU6_get_reg16(m, reg); }
+		} else {
+		/* Byte operation */
+			inb=CPU6_get_reg8(m,reg);
+		}
+	} else {
+	/* Uses implicit Register */
+		if(opw) { inw=CPU6_get_reg16(m, reg); }
+		else { inb=CPU6_get_reg8(m, reg); }
+	}
+
+	if(opw) {
+		CPU6_set_reg16(m, reg, CPU6_ALU_op1w_get_result(op,inw,arg.val,m->flags.L,&m->flags) );
+	} else {
+		CPU6_set_reg8(m, reg, CPU6_ALU_op1b_get_result(op,inb,arg.val,m->flags.L,&m->flags) );
+	}
+
 	return(0);
 }
 
 static inline int CPU6_ALU_op2r(CPU6_machine_t *m, bit_t opw, byte_t op, int sr, int dr) {
+	ISA_amode_alu2_arg_t arg={};
+	byte_t v1b=0, v2b=0;
+	word_t v1w=0, v2w=0;
+	byte_t sx=0;
+
+	/* Takes explicit registers */
+	if(sr<0 && dr<0) {
+		arg.byte=CPU6_fetch_byte(m);
+		sx= (arg.sx1<<1) | (arg.sx0<<0);
+		sr=arg.sr;
+		dr=arg.dr;
+		/* Word operation */
+		if(opw) {
+			sr=arg.srw<<1;
+			dr=arg.drw<<1;
+			v2w=CPU6_get_reg16(m, sr);
+
+			/* Extended addressing modes for word operations when low bit of sr and/or dr is 1 */
+
+			switch( sx ) {
+				case AMODE_ALU2W_SRC_REG: v1w=CPU6_get_reg16(m, sr); break;
+				case AMODE_ALU2W_SRC_DIR: v1w=CPU6_MEM_read_word(m,CPU6_fetch_word(m)); break;
+				case AMODE_ALU2W_SRC_LIT: v1w=CPU6_fetch_word(m);
+				case AMODE_ALU2W_SRC_IDX_DISP:
+					v1w=CPU6_MEM_read_word(m, (CPU6_get_reg16(m,sr) + CPU6_fetch_word(m)) );
+					break;
+			}
+		} else {
+		/* Byte operation */
+			v1w=CPU6_get_reg8(m,sr);
+			v2w=CPU6_get_reg8(m,dr);
+		}
+
+	/* Uses implicit Registers */
+	} else if(sr > -1 && dr > -1) {
+		if(opw) { v1w=CPU6_get_reg16(m, sr); v2w=CPU6_get_reg16(m, dr); }
+		else { v1b=CPU6_get_reg8(m, sr); v2b=CPU6_get_reg8(m, dr); }
+
+	/* We don't have a mode that uses one implicit and one explict, throw a fit */
+	} else {
+		CPU6_unimplemented("CPU6_ALU_op2r: Invalid argument - sr and dr must both either be explicit or implicit.");
+		return(-1);
+	}
+
+
+	if(opw) {
+		CPU6_set_reg16(m, dr, CPU6_ALU_op2w_get_result(op,v1w,v2w,m->flags.L,&m->flags) );
+	} else {
+		CPU6_set_reg8(m, dr, CPU6_ALU_op2b_get_result(op,v1b,v2b,m->flags.L,&m->flags) );
+	}
+
 	return(0);
+}
+
+inline static int CPU6_ext_inst_MAP(CPU6_machine_t *m) {
+
+}
+
+inline static int CPU6_ext_inst_DMA_ISR(CPU6_machine_t *m) {
+
+}
+inline static int CPU6_ext_inst_bignum(CPU6_machine_t *m) {
+
+}
+inline static int CPU6_ext_inst_memop(CPU6_machine_t *m) {
+
 }
 
 
@@ -481,8 +627,63 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 	byte_t opsub=op&0x0f;
 	bit_t opw=opg&0x1;
 
+	if(
+		/* Special instructions at 0x6 and 0x7 offsets for all groups after 0x30 group */
+		(opg > 0x3 && ((opsub&0xe) == 0x6) )
+		/* 0x2e/0x2f and 0x7e/0x7f special instructions */
+		|| ( (opg == 0x2 || opg == 0x7) && ((opsub&0xe) == 0xe) )
+		/* Oddball 0x78 special instructions */
+		|| (op == 0x78)
+	) {
+		opinfo("Ext.");
+		switch(op) {
+			/* 2e instructions for MAP manipulation */
+			case 0x2e:
+				opinfo("MAP: 0x2e");
+				return( CPU6_ext_inst_MAP(m) );
+			/* 2f instructions for DMA and internal status register control */
+			case 0x2f:
+				opinfo("IRQ_ISR: 0x2f");
+				return( CPU6_ext_inst_DMA_ISR(m) );
+			case 0x46: opinfo("BIGNUM: 0x46"); return( CPU6_ext_inst_bignum(m) );
+			case 0x47: opinfo("MEMOP: 0x47"); return( CPU6_ext_inst_memop(m) );
+			case 0x56:
+			case 0x57:
+			case 0x66:
+			case 0x67:
+			case 0x76:
+			case 0x77:
+			case 0x78:
+			case 0x7e:
+			case 0x7f:
+			case 0x86:
+			case 0x87:
+			case 0x96:
+			case 0x97:
+			case 0xa6:
+			case 0xa7:
+			case 0xb6:
+			case 0xb7:
+			case 0xc6:
+			case 0xc7:
+			case 0xd6:
+			case 0xd7:
+			case 0xe6:
+			case 0xe7:
+			case 0xf6:
+			case 0xf7:
+				CPU6_inst_unknown(m,op);
+				return(-1);
+			default:
+				CPU6_ASSERTION("Special instruction switch fell through!");
+				return(-1);
+		}
+
+	}
+
 	switch(opg) {	
 		case OPG_CTRL:
+			opinfo("CTRL: 0x%0x",op);
 			switch(opsub) {
 				case 0x0: return( CPU6_halt(m) );
 				case 0x1: return( CPU6_nop(m) );
@@ -504,6 +705,7 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 			}
 			break;
 		case OPG_COND:
+			opinfo("COND: 0x%0x",op);
 			switch(opsub) {
 				case 0x0: return( CPU6_cond_branch(m, CPU6_check_flags_set(m,C6_FLAG_L) ) );
 				case 0x1: return( CPU6_cond_branch(m, CPU6_check_flags_clear(m,C6_FLAG_L) ) );
@@ -524,32 +726,35 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 			}
 			break;
 		case OPG_ALU1B:
-			switch(opsub) {
-				case 0xe: return( CPU6_inst_2e(m) );
-				case 0xf: return( CPU6_inst_2f(m) );
+			/* These should be caught by special case handling before main switch */
+			if( (opsub & 0xe) == 0xe ) {
+				CPU6_ASSERTION("Special instruction op 0x%02x not caught before main switch", op);
 			}
 		case OPG_ALU1W:
+			opinfo("ALU1: 0x%0x",op);
 			switch(opsub) {
 				case 0x0: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_INC,-1) );
 				case 0x1: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_DEC,-1) );
 				case 0x2: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_CLR,-1) );
 				case 0x3: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_INV,-1) );
 				case 0x4: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_ASR,-1) );
-				case 0x5: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_LSL,-1) );
-				case 0x6: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_ROR,-1) );
-				case 0x7: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_ROL,-1) );
+				case 0x5: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_SL,-1) );
+				case 0x6: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_RRC,-1) );
+				case 0x7: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_RLC,-1) );
 				case 0x8: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_INC,C6_REG_A) );
 				case 0x9: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_DEC,C6_REG_A) );
 				case 0xa: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_CLR,C6_REG_A) );
 				case 0xb: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_INV,C6_REG_A) );
 				case 0xc: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_ASR,C6_REG_A) );
-				case 0xd: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_LSL,C6_REG_A) );
+				case 0xd: return( CPU6_ALU_op1r(m,opw,C6_ALU_OP_SL,C6_REG_A) );
 				case 0xe: return( CPU6_ALU_op1r(m,1,C6_ALU_OP_INC,C6_REG_X) );
 				case 0xf: return( CPU6_ALU_op1r(m,1,C6_ALU_OP_DEC,C6_REG_X) );
 			}
 			break;
 		case OPG_ALU2B:
 		case OPG_ALU2W:
+
+			opinfo("ALU2: 0x%0x",op);
 			switch(opsub) {
 				case 0x0: return( CPU6_ALU_op2r(m,opw,C6_ALU_OP_ADD,-1,-1) );
 				case 0x1: return( CPU6_ALU_op2r(m,opw,C6_ALU_OP_SUB,-1,-1) );
@@ -558,7 +763,9 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 				case 0x4: return( CPU6_ALU_op2r(m,opw,C6_ALU_OP_XOR,-1,-1) );
 				case 0x5: return( CPU6_ALU_op2r(m,opw,C6_ALU_OP_XFR,-1,-1) );
 				case 0x6:
-				case 0x7: return( CPU6_inst_unknown(m,op) );
+				case 0x7: 
+					CPU6_ASSERTION("Special instruction op 0x%02x not caught before main switch", op);
+					return(-1);
 				case 0x8: return( CPU6_ALU_op2r(m,opw,C6_ALU_OP_ADD,C6_REG_A,C6_REG_B) );
 				case 0x9: return( CPU6_ALU_op2r(m,opw,C6_ALU_OP_SUB,C6_REG_A,C6_REG_B) );
 				case 0xa: return( CPU6_ALU_op2r(m,opw,C6_ALU_OP_AND,C6_REG_A,C6_REG_B) );
@@ -570,9 +777,16 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 			}
 			break;
 		case OPG_MEMX:
-			if(opsub < 0x6 ) { return( CPU6_MEM_LD_decode(m,opw,opsub,C6_REG_X) ); }
-			else if ( (opsub&0x8) && opsub < (0x8+0x6) ) { return( CPU6_MEM_ST_decode(m,opw,(opsub-0x8),C6_REG_X) ); }
-			else { return( CPU6_inst_unknown(m,op) ); }
+			if(opsub < 0x6 ) {
+				opinfo("LDX: 0x%0x",op);
+				return( CPU6_MEM_LD_decode(m,opw,opsub,C6_REG_X) );
+			} else if ( (opsub&0x8) && opsub < (0x8+0x6) ) {
+				opinfo("STX: 0x%0x",op);
+				return( CPU6_MEM_ST_decode(m,opw,(opsub-0x8),C6_REG_X) );
+			} else {
+				CPU6_ASSERTION("Special instruction op 0x%02x not caught before main switch", op);
+				return(-1);
+			}
 			break;
 		case OPG_FLOW:
 			switch(opsub) {
@@ -582,19 +796,26 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 				case 0x3:
 				case 0x4:
 				case 0x5:
+					opinfo("JMP: 0x%0x",op);
 					return( CPU6_MEM_JMP_decode(m,opsub) );
 				case 0x6:
-				case 0x7:
+				case 0x7: 
 				case 0x8:
-					return( CPU6_inst_unknown(m,op) );
+					CPU6_ASSERTION("Special instruction op 0x%02x not caught before main switch", op);
+					return(-1);
 				case 0x9:
 				case 0xa:
 				case 0xb:
 				case 0xc:
 				case 0xd:
+					opinfo("JSR: 0x%0x",op);
 					return( CPU6_MEM_JSR_decode(m,(opsub-0x8)) );
-				case 0xe: return( CPU6_stack_push_reg_range(m) );
-				case 0xf: return( CPU6_stack_pop_reg_range(m) );
+				case 0xe:
+					opinfo("PUSHRR: 0x%0x",op);
+					return( CPU6_stack_push_reg_range(m) );
+				case 0xf:
+					opinfo("POPRR: 0x%0x",op);
+					return( CPU6_stack_pop_reg_range(m) );
 			}
 			break;
 		case OPG_LDAB:
@@ -605,9 +826,17 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 		case OPG_LDBW:
 		case OPG_STBB:
 		case OPG_STBW:
+			/* Special instrustions should be handled in logic before main switch */
+			if ( (opsub & 0xe) == 0x6 ) {
+				CPU6_ASSERTION("Special instruction op 0x%02x not caught before main switch", op);
+				return(-1);
+			}
+
 			if(opg&0x2) {
+				opinfo("ST: 0x%0x",op);
 				return( CPU6_MEM_ST_decode(m,opw,opsub,(opg&0x4)?C6_REG_B:C6_REG_A) );
 			} else {
+				opinfo("LD: 0x%0x",op);
 				return( CPU6_MEM_LD_decode(m,opw,opsub,(opg&0x4)?C6_REG_B:C6_REG_A) );
 			}
 			break;
@@ -616,7 +845,11 @@ int CPU6_eval_op(CPU6_machine_t *m, byte_t op) {
 };
 
 
-int main(int argc, char **argv) {
+int CPU6_run_next_instruction(CPU6_machine_t *m) {
+	byte_t op;
+	int ret;
+	op = CPU6_fetch_op(m);
+	ret = CPU6_eval_op(m,op);
+	return(ret);
+}
 
-	return(0);
-};
