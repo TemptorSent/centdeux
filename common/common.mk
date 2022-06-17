@@ -24,7 +24,7 @@ INC_PARAMS = $(addprefix -I, $(INC_DIRS))
 LIB_DIR += $(COMMON_LIB_DIR)
 LIB_PARAMS = $(addprefix -L, $(LIB_DIRS))
 
-CFLAGS += $(INC_PARAMS)
+CFLAGS += $(INC_PARAMS) $(LIB_PARAMS)
 
 # Detect our OS
 ifeq ('$(findstring ;, $(PATH))', ';')
