@@ -311,13 +311,12 @@ U_out_list_t D_UK11_out={
 	// Propagation delay ~15ns-40ns
 	{.d="Write RF"},
 	{.sig=SIG_UK11_CLK_UL13A_S_, .LO={.d="K11.1 (Unknown Clock Select) to flip-flop UL13A.S_ ->UM8.I1a (?HALT/SS?)"}},
-	{.sig=SIG_UK11_CLK_UM13_E_, .LO={.d="K11.2 (M13 Gate?)"}},
-	{.sig=SIG_UK11_CLK_UF11_E_, .LO={.d="K11.3 (F11 Enable)"}},
-	{.sig=SIG_UK11_CLK_O4_, .LO={.d="K11.4 (Write Register Clock? Unknown Clock Selected)"}},
+	{.sig=SIG_UK11_CLK_UM13_E_, .LO={.d="K11.2 WRITE ADDRESSABLE LATCH UM13 (UM13.EN_)"}},
+	{.sig=SIG_UK11_CLK_UF11_E_, .LO={.d="K11.3 WRITE ADDRESSABLE LATCH UF11 (UF11.EN_)"}},
+	{.sig=SIG_UK11_CLK_O4_, .LO={.d="K11.4 (Unconnected pin)"}},
+	{.sig=SIG_UK11_CLK_O5_, .LO={.d="K11.4 CLOCKED WRITE PAGE FILE ENTRY <- (R-Bus) (Clock.Wr_PFE)"}},
 	{.sig=SIG_CLK_WrR_WAR_LSB_,
-		.LO={.d="K11.5 CLOCKED WRITE TO WORKING ADDRESS REGISER LSB <- (IA-Bus/R-Bus) (Clock.WrR_WAR_LSB)"}},
-	{.sig=SIG_CLK_RdL_SysDB_,
-		.LO={.d="K11.6 CLOCKED READ FROM SYSTEM DATA BUS RECEIVE LATCH -> (DP-Bus) (Clock.RdL_SysDB)"}},
+		.LO={.d="K11.6 CLOCKED WRITE TO WORKING ADDRESS REGISER LSB <- (IA-Bus/R-Bus) (Clock.WrR_WAR_LSB)"}},
 	{.sig=SIG_CLK_WrR_SysDB_,
 		.LO={.d="K11.7 CLOCKED WRITE TO SYSTEM DATA BUS OUTPUT REGISTER <- (R-Bus) (Clock.WrR_SysDB)"}},
 	{}
@@ -356,13 +355,14 @@ U_sel_list_t D_UH11_sel={
 };
 U_out_list_t D_UH11_out={ // Decoder H11
 	{.sig=SIG_UH11_O0_, .LO={.d="H11.0 (Unknown Output)"}},
-	{.sig=SIG_UH11_O1_, .LO={.d="H11.1 (Unknown Output)"}},
-	{.sig=SIG_UH11_O2_, .LO={.d="H11.2 (Unknown Output - ?DBE_ and WTIN?)"}},
+	{.sig=SIG_UH11_O1_, .LO={.d="H11.1 (->2S2_.UD7.2Y_ ->S_.UA1A.Q ->{A,B}.UA2A.Y[INV] -> RDIN_)"}},
+	{.sig=SIG_UH11_O2_,
+		.LO={.d="H11.2 (->A.UC10D.Y[INV] ->B.UD12B.Y[NAND w/?] ->1S2_.UD7.1Y_ ->S_.UA1B.Q ->{A,B}.UA2B.Y[INV] -> WTIN_)"}},
 	{.sig=SIG_WrR_WAR_MSB_,
 		.LO={.d="H11.3 WRITE TO WORKING ADDRESS REGISER MSB <- (IA-Bus/R-Bus) (WrR_WAR_MSB)"}},
-	{.sig=SIG_UH11_O4_, .LO={.d="H11.4 (Unknown Output)"}},
+	{.sig=SIG_UH11_O4_, .LO={.d="H11.4 (->I0d.UD6.Zd -> WAR.CEP_)"}},
 
-	{.sig=SIG_UH11_O5_, .LO={.d="H11.5 (Increment MAR Counter?)"}},
+	{.sig=SIG_UH11_O5_, .LO={.d="H11.5 (->I0b.UD6.Zb -> MAR.CEP_)"}},
 	{.sig=SIG_Rd_MAPROM_,
 		.LO={.d="H11.6 READ MAPPING PROM -> (F-Bus)"},
 		.HI={.d="H11.6 READ ALU RESULT -> (F-Bus)"}},
@@ -401,20 +401,25 @@ U_sel_list_t D_UE7_sel={
 	{}
 };
 U_out_list_t D_UE7_out={ // Decoder E7
-	{.LO={.d="E7.0 LO"}},
+	{.LO={.d="E7.O0 LO"}},
 	{.sig=SIG_UE7_ClockB_E8A_ENABLE_,
-		.LO={.d="E7.1 ->UE8A.B (UE8A[NOR](ClockB2_,UE7.O1) -> (ClockB2_EA8) -> UE11A.A[NAND3], UE14A.D[FF-74LS74] )"}},
+		.LO={.d="E7.O1 ->B.UE8A[NOR ClockB2_].Y -> A.UE14F[INV].Y -> S_.UE15A[FF].Q -> {A,B}.A14A.Y ->?"}},
 	{.sig=SIG_UE7_WrR_FLR_,.LO={.d="E7.2 WRITE FLAG REGISTER"}},
 	{.sig=SIG_UE7_O3_MESS_,
-		.LO={.d="E7.3 ->UE8D.B (UE8D[NOR]((=UD8A.B[NAND4]->UD7.2S1_, =UD8B.C[NAND4]->UD7.1S1_, =UD10B.A[NOR]), UE7.O3)"}},
+		.LO={.d="E7.O3 ->B.UE8D.Y ->A.UB12B.Y ->RLE_ (UE8D[NOR]((=UD8A.B[NAND4]->UD7.2S1_, =UD8B.C[NAND4]->UD7.1S1_, =UD10B.A[NOR]), UE7.O3)"}},
 	{}
 };
+/* This is UE7.O3?
+	{.sig=SIG_CLK_RdL_SysDB_,
+		.LO={.d="K11.6 CLOCKED READ FROM SYSTEM DATA BUS RECEIVE LATCH -> (DP-Bus) (Clock.RdL_SysDB)"}},
+*/
+
 
 IC_decoder_t D_UE7={
 };
 
 U_t UE7= {
-	.name="D_UE7_CLK_SEL1",
+	.name="D_UE7_BUS_CTL0",
 	.d="Bus Control Decoder 0",
 	.col='E',
 	.row=7,
@@ -449,14 +454,14 @@ U_in_list_t AL_UF11_in={
 	{}
 };
 U_out_list_t AL_UF11_out={
-	{.d="UF11.Q0"},
+	{.d="UF11.Q0 UB12p9"},
 	{ .LO={.d="UF11.Q1 (ABE_) Address Bus Enable (Active LO) "}},
-	{.d="UF11.Q2"},
-	{.d="UF11.Q3"},
+	{.d="UF11.Q2 UD6p6"},
+	{.d="UF11.Q3 U/D_"},
 	{.d="UF11.Q4 UM8.I0b"},
-	{.d="UF11.Q5"},
-	{.d="UF11.Q6"},
-	{.d="UF11.Q7"},
+	{.d="UF11.Q5 UM8p11"},
+	{.d="UF11.Q6 UB11p2"},
+	{.d="UF11.Q7 UM8p17"},
 	{}
 };
 IC_addr_latch_t AL_UF11={

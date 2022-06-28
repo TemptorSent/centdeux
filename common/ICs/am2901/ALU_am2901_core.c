@@ -204,21 +204,21 @@ char *am2901_update_Q(am2901_core_t *core) {
 
 char *am2901_update_shifter(am2901_core_t *core) {
 	/* Update shifter outputs */
-	if(core->Q_shift->lsb_dir=='O') { core->Q_shift->lsb=(core->internal.Q>>0)&0x1; }
-	if(core->Q_shift->msb_dir=='O') { core->Q_shift->msb=(core->internal.Q>>3)&0x1; }
-	if(core->RAM_shift->lsb_dir=='O') { core->RAM_shift->lsb=(core->internal.F>>0)&0x1; }
-	if(core->RAM_shift->msb_dir=='O') { core->RAM_shift->msb=(core->internal.F>>3)&0x1; }
+	if(core->Q_shift->lsb_dir=='O') { *(core->Q_shift->lsb)=(core->internal.Q>>0)&0x1; }
+	if(core->Q_shift->msb_dir=='O') { *(core->Q_shift->msb)=(core->internal.Q>>3)&0x1; }
+	if(core->RAM_shift->lsb_dir=='O') { *(core->RAM_shift->lsb)=(core->internal.F>>0)&0x1; }
+	if(core->RAM_shift->msb_dir=='O') { *(core->RAM_shift->msb)=(core->internal.F>>3)&0x1; }
 }
 
 char *am2901_update_outputs(am2901_core_t *core) {
 	/* Zero flag - must be "pulled high" externally, this acts as an open-collector output*/
-	if(core->internal.F&0xf){*(core->out->flags->FZ=0;}
+	if(core->internal.F&0xf){core->out->flags->FZ=0;}
 
 	/* F3 flag - set if MSB of F is 1 (sign bit if MSB of word)*/
-	*(core->out->flags->F3)=core->internal.F&0x8?1:0;
+	core->out->flags->F3=core->internal.F&0x8?1:0;
 
 	/* Update Y outputs if enabled */
-	if(!*(core->in->OE_)){*(core->out->Y)=am2901_readYmux(core);}
+	if(!core->in->OE_){core->out->Y=am2901_readYmux(core);}
 	return(0);
 }
 

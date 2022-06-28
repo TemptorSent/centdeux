@@ -134,6 +134,7 @@ enum BUS_CYCLE_STATES {
 	BUS_CYCLE_MEM_MAYBE_ASSERT_APRE,
 	BUS_CYCLE_MEM_CHECK_APRE,
 	BUS_CYCLE_MEM_WAIT_INIT,
+	BUS_CYCLE_MEM_WAIT_DRDY,
 	BUS_CYCLE_MEM_WAIT_BUSY_CLEAR
 };
 
@@ -152,8 +153,13 @@ int BUS_MEM_cycle_initiate(BUS_CPU6_t *bus, enum BUS_CYCLE_STATES state, enum BU
 					return(BUS_CYCLE_MEM_WAIT_BUSY_CLEAR);
 				case BUS_OP_READ:
 					BUS_assert_RDIN(bus);
-					return(BUS_CYCLE_MEM_WAIT_BUSY_CLEAR);
+					return(BUS_CYCLE_MEM_WAIT_DRDY);
 			};
+		case BUS_CYCLE_WAIT_BUSY:
+			if(DSYN
+		case BUS_CYCLE_WAIT_DRDY:
+		case BUS_CYCLE_READ_DATA:
+
 		default: break;
 	}
 }

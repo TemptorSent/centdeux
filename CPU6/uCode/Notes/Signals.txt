@@ -19,6 +19,9 @@
 ! p2,p3
 		-> UD14.A7
 
+# Low nibble select
+uC53 (UK3.D5/UK5.Q5) -> 2pUD10Ap1 (NOR) -> UD{14,15}.A7
+
 # Register file IL/addressed mode nibble selection
 		UC13 ->
 		UC15 ->
