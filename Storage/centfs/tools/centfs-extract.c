@@ -145,7 +145,6 @@ centfs_read_alist_dalent_readnext:
 
 	dals=(centfs_sector_addr_t *)(alsec.data + dirent->dal_ptr.byte);
 	if((*dals)[0] & 0x80 ) {
-		printf("High bit set: 0x%04x\n", BE_WORD(*dals));
 		if((*dals)[1] == 0xff) { return(-1); }
 		dirent->dal_ptr.sector = dirent->base_sector + (uint16_t)( ~((uint16_t)(BE_WORD(*dals))) );
 		dirent->dal_ptr.byte= 3 * (*dals)[2];
@@ -181,7 +180,7 @@ int centfs_dir_list( centfs_dirent_t *dirent) {
 	centfs_dr_file_t *dr;
 	centfs_sector_number_t alist_sector_start, alist_sec;
 	int i=0;
-	uint8_t offset;
+	centfs_sector_byte_offset_t offset;
 	void *ent;
 
 	drsec.number=dirent->base_sector;

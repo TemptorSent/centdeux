@@ -32,9 +32,11 @@ typedef struct centfs_device_t {
 
 typedef uint8_t centfs_sector_addr_t[3];
 
+typedef uint16_t centfs_sector_byte_offset_t;
+
 typedef struct centfs_sector_byte_t {
 	centfs_sector_number_t sector;
-	uint8_t byte;
+	centfs_sector_byte_offset_t byte;
 } centfs_sector_byte_t;
 
 
