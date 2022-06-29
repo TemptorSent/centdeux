@@ -231,7 +231,8 @@ int centfs_read_dirent_file(centfs_dirent_t *dirent) {
 	dirent->attr_ptr.sector= ( BE_WORD(dirent->file.alist_sector_offset) +
 		( BE_3BYTES(dirent->header.alist_sector_start)?
 			BE_3BYTES(dirent->header.alist_sector_start)
-			: drsec.number
+			: dirent->base_sector
+			//: drsec.number
 		)
 	);
 
