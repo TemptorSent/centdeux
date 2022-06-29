@@ -232,7 +232,6 @@ int centfs_read_dirent_file(centfs_dirent_t *dirent) {
 		( BE_3BYTES(dirent->header.alist_sector_start)?
 			BE_3BYTES(dirent->header.alist_sector_start)
 			: dirent->base_sector
-			//: drsec.number
 		)
 	);
 
@@ -273,10 +272,9 @@ int centfs_dir_list( centfs_dirent_t *dirent) {
 		printf("\n");
 
 		if( (dirent->file.filetype & 0x0f ) == 0x5 ) {
-			centfs_sector_byte_t next_dalent = {.sector=0, .byte=0};
 			subdirent.parent_dirent=dirent;
 			subdirent.dev=dirent->dev;
-			subdirent.base_sector=centfs_read_alist_dalent(dirent,&next_dalent);
+			subdirent.base_sector=centfs_read_alist_dalent(dirent,(void *)0);
 			centfs_dir_list(&subdirent);
 		}
 
@@ -289,54 +287,6 @@ int centfs_dir_list( centfs_dirent_t *dirent) {
 	if( res < 1 ) { return(res); }
 	return(dirent->file_idx);
 }
-/*
-	while( !( (dirent->dev->read_sector)(dirent->dev,&drsec) ) ) {
-		if(i==0) {
-			centfs_read_dirent_header(dirent);
-			if(!dirent->parent_dirent) { centfs_print_dr_header(&dirent->header); }
-			i++;
-			continue;
-		}
-
-		do {
-			int res;
-			dirent->file_idx=i;
-			res=centfs_read_dirent_file(dirent);
-			if( res < 1 ) { return(-1); }
-			else if ( res == 0 ) { goto centfs_dir_list_done; }
-			centfs_read_alist_attr(dirent);
-
-			if(dirent->parent_dirent) { printf("  "); }
-			centfs_print_dr_file(&dirent->file);
-			centfs_print_alist_attr(&dirent->attr);
-			printf("\n");
-
-			if( (dirent->file.filetype & 0x0f ) == 0x5 ) {
-				centfs_sector_byte_t next_dalent = {.sector=0, .byte=0};
-				subdirent.parent_dirent=dirent;
-				subdirent.dev=dirent->dev;
-				subdirent.base_sector=centfs_read_alist_dalent(dirent,&next_dalent);
-				centfs_dir_list(&subdirent);
-			}
-
-
-			//centfs_print_alist_dal(dirent);
-
-			i++;
-		} while ( i % (CENTFS_BYTES_PER_SECTOR/CENTFS_DR_LENGTH) );
-
-		drsec.number++;	
-	}
-*/
-	/* If we reached here, we had a read error on a sector */
-	/*
-	return(-1);
-
-centfs_dir_list_done:
-	return(i);
-
-}
-*/
 
 
 int main(int argc, char **argv) {
