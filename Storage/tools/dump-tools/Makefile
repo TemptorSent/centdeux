@@ -22,7 +22,7 @@ $(TOOLBIN)/%$(EXE_EXT): obj/%.o | $(TOOLBIN)
 
 
 clean:
-	rm -f *.o $(EXES)
+	rm -rf obj $(EXES)
 
 
 include $(TOP)/common/end-common.mk
