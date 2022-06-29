@@ -133,9 +133,15 @@ int centfs_print_alist_attr(centfs_alist_attr_t *attr) {
 	return(0);
 }
 
-int32_t centfs_read_alist_dalent( centfs_dirent_t *dirent, centfs_sector_byte_t *next) {
+int32_t centfs_read_alist_dalent( centfs_dirent_t *dirent, centfs_sector_byte_t *next_ptr) {
 	centfs_sector_t alsec;
 	centfs_sector_addr_t *dals;
+
+	centfs_sector_byte_t dummy_next={.sector=0, .byte=0 };
+	centfs_sector_byte_t *next;
+
+	if(!next_ptr) { next=&dummy_next; }
+	else { next=next_ptr; };
 
 	if(!(next->sector || next->byte)) { 
 		next->sector = dirent->dal_ptr.sector;
@@ -155,15 +161,12 @@ centfs_read_alist_dalent_readnext:
 
 	}
 	next->byte += 3;
-
 	return(BE_3BYTES(*(dals)) + (BE_3BYTES(dirent->header.alist_sector_start)? 0 : dirent->base_sector));
 }
 
 int centfs_print_alist_dal(centfs_dirent_t *dirent) {
 	centfs_sector_byte_t next_dalent = {.sector=0, .byte=0};
 	int32_t dale;
-//	next_dalent.sector=0;
-//	next_dalent.byte=0;
 
 	for(int i=0; !((dale = centfs_read_alist_dalent(dirent,&next_dalent)) < 0); i++) {
 		printf("%c0x%06x", i? ' ':'\t', dale);
@@ -185,54 +188,131 @@ int centfs_read_alist_attr(centfs_dirent_t *dirent) {
 	return(0);
 }
 
+int centfs_read_dirent_header(centfs_dirent_t *dirent) {
+	centfs_sector_t drsec;
+	centfs_dr_header_t *dr0;
+
+	drsec.number=dirent->base_sector;
+
+	if( ( (dirent->dev->read_sector)(dirent->dev,&drsec) ) != 0 ) {
+		return(-1);
+	}
+
+	dr0=(centfs_dr_header_t *)(drsec.data);
+
+	memcpy(&(dirent->header), dr0, sizeof(*dr0));
+	
+	return(0);
+}
+
+int centfs_read_dirent_file(centfs_dirent_t *dirent) {
+	centfs_sector_t drsec;
+	centfs_dr_file_t *dr;
+	centfs_sector_byte_offset_t byte_offset;
+	centfs_sector_number_t sector_offset;
+	
+	sector_offset= dirent->file_idx / CENTFS_DRS_PER_SECTOR;
+	byte_offset= (dirent->file_idx % CENTFS_DRS_PER_SECTOR) * CENTFS_DR_LENGTH;
+
+	drsec.number= dirent->base_sector + sector_offset;
+
+	if( ( (dirent->dev->read_sector)(dirent->dev,&drsec) ) != 0 ) {
+		return(-1);
+	}
+
+	dr=(centfs_dr_file_t *)((drsec.data) + byte_offset);
+	if( ! dr->filename[0] ) {
+		return(0);
+	}
+
+	memcpy(&(dirent->file), dr, sizeof(*dr));
+
+
+	dirent->attr_ptr.sector= ( BE_WORD(dirent->file.alist_sector_offset) +
+		( BE_3BYTES(dirent->header.alist_sector_start)?
+			BE_3BYTES(dirent->header.alist_sector_start)
+			: drsec.number
+		)
+	);
+
+	dirent->attr_ptr.byte=dr->alist_entry_number * CENTFS_ALIST_DALENT_LENGTH;
+	
+	centfs_read_alist_attr(dirent);
+
+
+	dirent->dal_ptr.sector=dirent->attr_ptr.sector;
+	dirent->dal_ptr.byte=dirent->attr_ptr.byte + CENTFS_ALIST_ATTR_LENGTH;
+
+	return(dirent->file_idx);
+}
+
 int centfs_dir_list( centfs_dirent_t *dirent) {
 	centfs_sector_t drsec;
 	centfs_dr_header_t *dr0;
 	centfs_dr_file_t *dr;
 	centfs_dirent_t subdirent;
 	centfs_sector_number_t alist_sector_start, alist_sec;
-	int i=0;
+	int res=0;
 	centfs_sector_byte_offset_t offset;
 	void *ent;
 
 	drsec.number=dirent->base_sector;
 
+	res=centfs_read_dirent_header(dirent);
+	if(res < 0 ) { return(res); }
 
+	if(!dirent->parent_dirent) { centfs_print_dr_header(&dirent->header); }
+
+	for (dirent->file_idx=1; (res=centfs_read_dirent_file(dirent))>0; dirent->file_idx++) {
+		centfs_read_alist_attr(dirent);
+
+		if(dirent->parent_dirent) { printf("  "); }
+		centfs_print_dr_file(&dirent->file);
+		centfs_print_alist_attr(&dirent->attr);
+		printf("\n");
+
+		if( (dirent->file.filetype & 0x0f ) == 0x5 ) {
+			centfs_sector_byte_t next_dalent = {.sector=0, .byte=0};
+			subdirent.parent_dirent=dirent;
+			subdirent.dev=dirent->dev;
+			subdirent.base_sector=centfs_read_alist_dalent(dirent,&next_dalent);
+			centfs_dir_list(&subdirent);
+		}
+
+
+		centfs_print_alist_dal(dirent);
+		printf("\n");
+
+
+	}
+	if( res < 1 ) { return(res); }
+	return(dirent->file_idx);
+}
+/*
 	while( !( (dirent->dev->read_sector)(dirent->dev,&drsec) ) ) {
 		if(i==0) {
-			dr0=(centfs_dr_header_t *)(drsec.data);
-			alist_sector_start=( BE_3BYTES(dr0->alist_sector_start)?
-				BE_3BYTES(dr0->alist_sector_start) : drsec.number);
-			memcpy(&(dirent->header), dr0, sizeof(*dr0));
-			centfs_print_dr_header(&dirent->header);
+			centfs_read_dirent_header(dirent);
+			if(!dirent->parent_dirent) { centfs_print_dr_header(&dirent->header); }
 			i++;
 			continue;
 		}
 
 		do {
-			offset=(i%(CENTFS_BYTES_PER_SECTOR/CENTFS_DR_LENGTH)) * CENTFS_DR_LENGTH;
-			dr=(centfs_dr_file_t *)((drsec.data) + offset);
-			if( ! dr->filename[0] ) {
-				goto centfs_dir_list_done;
-			}
-			dirent->file_ptr.sector=drsec.number;
-			dirent->file_ptr.byte=offset;
-			memcpy(&(dirent->file), dr, sizeof(*dr));
-			if( !BE_3BYTES(dirent->header.alist_sector_start) ) { printf("\t"); }
-			centfs_print_dr_file(&dirent->file);
-
-			dirent->attr_ptr.sector=BE_WORD(dr->alist_sector_offset) + alist_sector_start;
-			dirent->attr_ptr.byte=dr->alist_entry_number * CENTFS_ALIST_DALENT_LENGTH;
-			
-			dirent->dal_ptr.sector=dirent->attr_ptr.sector;
-			dirent->dal_ptr.byte=dirent->attr_ptr.byte + CENTFS_ALIST_ATTR_LENGTH;
-
+			int res;
+			dirent->file_idx=i;
+			res=centfs_read_dirent_file(dirent);
+			if( res < 1 ) { return(-1); }
+			else if ( res == 0 ) { goto centfs_dir_list_done; }
 			centfs_read_alist_attr(dirent);
+
+			if(dirent->parent_dirent) { printf("  "); }
+			centfs_print_dr_file(&dirent->file);
 			centfs_print_alist_attr(&dirent->attr);
 			printf("\n");
 
 			if( (dirent->file.filetype & 0x0f ) == 0x5 ) {
 				centfs_sector_byte_t next_dalent = {.sector=0, .byte=0};
+				subdirent.parent_dirent=dirent;
 				subdirent.dev=dirent->dev;
 				subdirent.base_sector=centfs_read_alist_dalent(dirent,&next_dalent);
 				centfs_dir_list(&subdirent);
@@ -241,19 +321,21 @@ int centfs_dir_list( centfs_dirent_t *dirent) {
 
 			//centfs_print_alist_dal(dirent);
 
-			printf("\n");
 			i++;
 		} while ( i % (CENTFS_BYTES_PER_SECTOR/CENTFS_DR_LENGTH) );
 
 		drsec.number++;	
 	}
+*/
 	/* If we reached here, we had a read error on a sector */
+	/*
 	return(-1);
 
 centfs_dir_list_done:
 	return(i);
-}
 
+}
+*/
 
 
 int main(int argc, char **argv) {
@@ -284,6 +366,7 @@ int main(int argc, char **argv) {
 
 	dirent.dev=&dev;
 	dirent.base_sector=nsec;
+	dirent.parent_dirent=0;
 	centfs_dir_list(&dirent);
 
 	return(0);

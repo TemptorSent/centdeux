@@ -42,6 +42,8 @@ typedef struct centfs_sector_byte_t {
 
 #define CENTFS_DR_LENGTH 0x10
 
+#define CENTFS_DRS_PER_SECTOR ( CENTFS_BYTES_PER_SECTOR / CENTFS_DR_LENGTH )
+
 /* From RPL2 dump */
 
 /*
@@ -146,10 +148,12 @@ typedef struct centfs_dirent_t {
 	centfs_device_t *dev;
 	centfs_sector_number_t	base_sector;
 	centfs_dr_header_t	header;
+	uint16_t		file_idx; /* Hopefully we can't have more than 64k files in a dir */	
 	centfs_sector_byte_t	file_ptr;
 	centfs_dr_file_t	file;
 	centfs_sector_byte_t	attr_ptr;
 	centfs_alist_attr_t	attr;
 	centfs_sector_byte_t	dal_ptr;
+	struct centfs_dirent_t	*parent_dirent;
 
 } centfs_dirent_t;
