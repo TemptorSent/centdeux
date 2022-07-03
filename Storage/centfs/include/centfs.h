@@ -1,5 +1,9 @@
 #include "centfs-disk-format.h"
 
+#define CENTFS_FILENAME_BYTES 10
+#define CENTFS_SECTORNUM_BYTES 3
+#define CENTFS_DATESTAMP_BYTES 2
+
 enum CENTFS_SECTOR_IOSTATE {
 	CENTFS_SECTOR_IOSTATE_UNREAD=0x0,
 	CENTFS_SECTOR_IOSTATE_READ_VALID=0x1,
@@ -30,7 +34,9 @@ typedef struct centfs_device_t {
 } centfs_device_t;
 
 
-typedef uint8_t centfs_sector_addr_t[3];
+typedef uint8_t centfs_sector_addr_t[CENTFS_SECTORNUM_BYTES];
+typedef char centfs_filename_t[CENTFS_FILENAME_BYTES];
+typedef uint8_t centfs_datestamp_t[CENTFS_DATESTAMP_BYTES];
 
 typedef uint16_t centfs_sector_byte_offset_t;
 
@@ -43,6 +49,7 @@ typedef struct centfs_sector_byte_t {
 #define CENTFS_DR_LENGTH 0x10
 
 #define CENTFS_DRS_PER_SECTOR ( CENTFS_BYTES_PER_SECTOR / CENTFS_DR_LENGTH )
+
 
 /* From RPL2 dump */
 
@@ -59,16 +66,16 @@ draloc   equ    13           disk address of first sector of alloc list file
 
 typedef union centfs_dr_header_t {
 	struct {
-		char drvol[10];
-		uint8_t drrgdt[2];
+		centfs_filename_t drvol;
+		centfs_datestamp_t drrgdt;
 		uint8_t drrger;
-		uint8_t draloc[3];
+		centfs_sector_addr_t draloc;
 	};
 	struct {
-		char volume_name[10];
-		uint8_t last_reorg_date[2];
+		centfs_filename_t volume_name;
+		centfs_datestamp_t last_reorg_date;
 		uint8_t last_reorg_errors;
-		uint8_t alist_sector_start[3];
+		centfs_sector_addr_t alist_sector_start;
 	};
 } centfs_dr_header_t;
 
@@ -85,20 +92,22 @@ drdat    equ    14           binary file date
 drlen    equ    16           length of directory entry
 *
 */
+
+
 typedef union centfs_dr_file_t {
 	struct {
-		char drfnam[10];
+		centfs_filename_t drfnam;
 		uint8_t drabp;
 		uint8_t draad[2];
 		uint8_t dratt;
-		uint8_t drdat[2];
+		centfs_datestamp_t drdat;
 	};
 	struct {
-		char filename[10];
+		centfs_filename_t filename;
 		uint8_t alist_entry_number;
 		uint8_t alist_sector_offset[2];
 		uint8_t filetype;
-		uint8_t date[2];
+		centfs_datestamp_t date;
 	};
 } centfs_dr_file_t;
 
@@ -157,3 +166,17 @@ typedef struct centfs_dirent_t {
 	struct centfs_dirent_t	*parent_dirent;
 
 } centfs_dirent_t;
+
+
+#define CENTFS_FILETYPE_DIR	0x0
+#define CENTFS_FILETYPE_BIN	0x1
+#define CENTFS_FILETYPE_LNK	0x2
+#define CENTFS_FILETYPE_CTG	0x3
+#define CENTFS_FILETYPE_EXF	0x4
+#define CENTFS_FILETYPE_LIB	0x5
+#define CENTFS_FILETYPE_IND	0x6
+#define CENTFS_FILETYPE_SEG	0x7
+#define CENTFS_FILETYPE_QUE	0x8
+
+extern const char * const centfs_filetype_list[9][3];
+
