@@ -177,6 +177,8 @@ typedef struct centfs_dirent_t {
 #define CENTFS_FILETYPE_IND	0x6
 #define CENTFS_FILETYPE_SEG	0x7
 #define CENTFS_FILETYPE_QUE	0x8
+#define CENTFS_FILETYPE_MAX	0x8
 
-extern const char * const centfs_filetype_list[9][3];
+
+extern const char * const centfs_filetype_list[CENTFS_FILETYPE_MAX + 1][3];
 

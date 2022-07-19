@@ -167,6 +167,20 @@ typedef struct centfs_dirent_t {
 
 } centfs_dirent_t;
 
+typedef struct centfs_FILE {
+	centfs_dirent_t *dirent;
+	centfs_sector_t sector;
+	off_t pos_offset;
+	centfs_sector_byte_t pos_sector_byte;
+	centfs_sector_number_t blksize;
+	centfs_sector_number_t blknum;
+	centfs_sector_byte_t curr_dalent;
+	centfs_sector_byte_t next_dalent;
+
+
+
+
+} centfs_FILE;
 
 #define CENTFS_FILETYPE_DIR	0x0
 #define CENTFS_FILETYPE_BIN	0x1
@@ -177,6 +191,8 @@ typedef struct centfs_dirent_t {
 #define CENTFS_FILETYPE_IND	0x6
 #define CENTFS_FILETYPE_SEG	0x7
 #define CENTFS_FILETYPE_QUE	0x8
+#define CENTFS_FILETYPE_MAX	0x8
 
-extern const char * const centfs_filetype_list[9][3];
+
+extern const char * const centfs_filetype_list[CENTFS_FILETYPE_MAX + 1][3];
 

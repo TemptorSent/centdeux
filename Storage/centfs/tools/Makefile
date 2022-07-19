@@ -8,7 +8,7 @@ EXES := $(addsuffix $(EXE_EXT), $(LIST))
 SCRIPTS :=
 EXES += $(addprefix $(TOOLBIN)/, $(SCRIPTS))
 
-LIBS += $(COMMON_LIB_DIR)/libcommon-cent$(LIBA_EXT)
+LIBS += $(CENTFS_LIB_DIR)/libcentfs$(LIBA_EXT) $(COMMON_LIB_DIR)/libcommon-cent$(LIBA_EXT)
 .PHONY: all clean $(PROGS)
 
 

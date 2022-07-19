@@ -1,6 +1,6 @@
 #include "centfs.h"
 
-const char * const centfs_filetype_list[9][3] = {
+const char * const centfs_filetype_list[CENTFS_FILETYPE_MAX + 1][3] = {
 	{"0", "dir", "directory file"},
 	{"1", "bin", "binary file"},
 	{"2", "lnk", "linked sequential file"},

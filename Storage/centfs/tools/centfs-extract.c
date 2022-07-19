@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <getopt.h>
+#include <time.h>
 #include "common-cents.h"
 #include "centfs-disk-format.h"
 #include "ccdp-dump-format.h"
@@ -181,6 +182,43 @@ int centfs_image_device_init(
 	return(0);
 }
 
+int centfs_dirent_init(centfs_dirent_t *dirent, centfs_device_t *dev, centfs_sector_number_t base_sector, centfs_dirent_t *parent){
+	dirent->dev=dev;
+	dirent->base_sector=base_sector;
+	dirent->parent_dirent=parent;
+	return(0);
+}
+
+void centfs_print_fn(char *fn) {
+	char f[CENTFS_FILENAME_BYTES] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+	cents_ncopy_strip_0x80(f,fn,CENTFS_FILENAME_BYTES);
+	printf("%.*s",CENTFS_FILENAME_BYTES, f);
+}
+
+void centfs_print_filetype(uint8_t type) {
+	type &= 0xf;
+	if(type > CENTFS_FILETYPE_MAX) { return; }
+	printf("%.3s", centfs_filetype_list[type][1] );
+}
+
+void centfs_print_datestamp(uint16_t ds) {
+	struct tm tm;
+	//if(!ds) { printf("0000-00-00"); return; }
+
+	tm.tm_sec=0;
+	tm.tm_min=0;
+	tm.tm_hour=0;
+	tm.tm_mon=0;
+	tm.tm_mday=ds+1;
+	tm.tm_year=0;
+	tm.tm_wday=0;
+	tm.tm_yday=0;
+	tm.tm_isdst=-1;
+	mktime(&tm);
+	printf("%04u-%02u-%02u",(tm.tm_year + 1900), (tm.tm_mon + 1), (tm.tm_mday ) ); 
+
+}
+
 void centfs_print_dr_header(centfs_dr_header_t *dr0) {
 	char fn[sizeof(dr0->volume_name)];
 	cents_ncopy_strip_0x80(fn,dr0->volume_name,sizeof(dr0->volume_name));
@@ -201,16 +239,30 @@ void centfs_print_dr_file(centfs_dr_file_t *drf) {
 	printf("%.*s",(int)sizeof(fn), fn);
 	printf("\t0x%02x",drf->alist_entry_number);
 	printf("\t0x%04x",BE_WORD(drf->alist_sector_offset));
-	printf("\t0x%02x",drf->filetype);
-	printf("\t0x%04x",BE_WORD(drf->date));
+	//printf("\t0x%02x",drf->filetype);
+	printf("\t");
+	centfs_print_filetype(drf->filetype);
+	//printf("\t0x%04x",BE_WORD(drf->date));
+	printf("\t");
+	centfs_print_datestamp(BE_WORD(drf->date));
 
 	return;
 }
 
 int centfs_print_alist_attr(centfs_alist_attr_t *attr) {
-	printf("\t0x%04x",BE_WORD(attr->filesize));
+	centfs_sector_number_t bc, bs, fs;
+	int32_t fsb;
+
+	fs= BE_WORD(attr->filesize) + 1;
+	bs= (1 << attr->filesize_increment);
+	bc= fs / bs;
+	fsb= fs * CENTFS_BYTES_PER_SECTOR;
+
+	printf("\t0x%04x sectors (0x%04x 0x%04x sector blocks) [0x%06x bytes]", fs, bc, bs, fsb);
+
+	//printf("\t0x%04x",BE_WORD(attr->filesize));
 	printf("\t0x%02x",BE_WORD(attr->file_begin_pointer));
-	printf("\t0x%02x",attr->filesize_increment);
+	//printf("\t0x%02x",attr->filesize_increment);
 	printf("\t0x%02x",attr->fileclass);
 	return(0);
 }
@@ -257,6 +309,22 @@ int centfs_print_alist_dal(centfs_dirent_t *dirent) {
 	return(0);
 }
 
+int centfs_dirent_read_file(centfs_dirent_t *dirent) {
+	centfs_sector_t fsec;
+	centfs_sector_byte_t next_dalent = {.sector=0, .byte=0};
+	int32_t dale;
+
+	for(int i=0; !((dale = centfs_read_alist_dalent(dirent,&next_dalent)) < 0); i++) {
+		for( fsec.number=dale; fsec.number < (dale + (1 << dirent->attr.filesize_increment)); fsec.number++ ) {
+			(dirent->dev->read_sector)(dirent->dev,&fsec);
+			fwrite(fsec.data, sizeof(fsec.data), 1, stdout);
+		}
+
+	}
+
+	return(0);
+}
+
 int centfs_read_alist_attr(centfs_dirent_t *dirent) {
 	centfs_alist_attr_t *attr;
 	centfs_sector_t alsec;
@@ -268,6 +336,28 @@ int centfs_read_alist_attr(centfs_dirent_t *dirent) {
 
 
 	return(0);
+}
+
+centfs_sector_t *centfs_FILE_seek_sector(centfs_FILE *F, centfs_sector_number_t file_sectnum) {
+	centfs_sector_byte_t next_dalent = {.sector=0, .byte=0};
+	int32_t dale;
+	for(int i=0; !((dale = centfs_read_alist_dalent(F->dirent,&next_dalent)) < 0); i++) {
+		for(int j=0; j < (1 << F->dirent->attr.filesize_increment); j++ ) {
+			if( !(file_secnum-- > 0) ) {
+				F->sector.number= dale + j;
+				return(F->sector);
+			}
+		}
+	}
+	return(NULL);
+}
+
+centfs_sector_t *centfs_FILE_read_sector(centfs_FILE *F) {
+	if( !(F->dirent->dev->read_sector)(F->dirent->dev,F->sector) ) {
+		return(F->sector);
+	} else {
+		return(NULL);
+	}
 }
 
 int centfs_read_dirent_header(centfs_dirent_t *dirent) {
@@ -388,7 +478,7 @@ char *centfs_fnsep(char *fn) {
 char *centfs_fnsplit(char *fn) {
 	char *sep;
 	sep= centfs_fnsep(fn);
-	return( sep? (sep+1) : NULL );
+	return( sep? *(sep+1)? (sep+1)  : NULL : NULL );
 }
 
 int centfs_fnmatch(char *fn, char *match) {
@@ -433,55 +523,110 @@ centfs_fnmatch_next:
 	else { return(0); }
 }
 
-int centfs_dir_find( centfs_dirent_t *dirent, char * match) {
-	centfs_sector_t drsec;
-	centfs_dr_header_t *dr0;
-	centfs_dr_file_t *dr;
-	centfs_dirent_t subdirent;
-	centfs_sector_number_t alist_sector_start, alist_sec;
+
+typedef struct centfs_dirent_callback_t {
+	int (*func)(centfs_dirent_t *, struct centfs_dirent_callback_t *);
+	void *opts;
+	int count;
+} centfs_dirent_callback_t;
+
+typedef int (*centfs_dirent_callback_func_t)( centfs_dirent_t *, centfs_dirent_callback_t * );
+
+typedef struct centfs_dirent_callback_list_opts_t {
+	uint8_t mode_long;
+	uint8_t mode_all;
+	uint8_t mode_sector_index;
+} centfs_dirent_callback_list_opts_t;
+
+int centfs_dirent_callback_list( centfs_dirent_t *dirent, centfs_dirent_callback_t *callback) {
+       	centfs_dirent_callback_list_opts_t *opts;
+	opts=(centfs_dirent_callback_list_opts_t *)callback->opts;
+
+	if(dirent->file_idx==0 && !dirent->parent_dirent) { centfs_print_dr_header(&dirent->header); }
+	if( !opts->mode_all && (dirent->file.filetype & 0x0f) == CENTFS_FILETYPE_DIR ) { return(-1); };
+	if(dirent->parent_dirent) {
+		if( callback->count++ == 0 ) {
+			centfs_print_fn(dirent->parent_dirent->file.filename);
+			printf("\n");
+		}
+		printf("  ");
+	}
+	centfs_print_dr_file(&dirent->file);
+	if( opts->mode_long ) { centfs_print_alist_attr(&dirent->attr); }
+	printf("\n");
+	if( opts->mode_sector_index ) {
+		centfs_print_alist_dal(dirent);
+		printf("\n");
+	}
+
+
+	return(0);
+}
+
+typedef struct centfs_dirent_callback_extract_opts_t {
+	uint8_t mode_ascii;
+	uint8_t mode_all;
+} centfs_dirent_callback_extract_opts_t;
+
+int centfs_dirent_callback_extract( centfs_dirent_t *dirent, centfs_dirent_callback_t *callback) {
+       	centfs_dirent_callback_extract_opts_t *opts;
+	opts=(centfs_dirent_callback_extract_opts_t *)callback->opts;
+
+	/* Skip headers */
+	if( dirent->file_idx==0 ) { return(-1); }
+	if( !opts->mode_all && (dirent->file.filetype & 0x0f) == CENTFS_FILETYPE_DIR ) { return(-1); };
+	centfs_print_dr_file(&dirent->file);
+	centfs_dirent_read_file(dirent);
+
+
+	return(0);
+}
+
+int centfs_dir_find( centfs_dirent_t *dirent, centfs_dirent_callback_t *callback, char *match) {
+	centfs_dirent_t subdirent, *pardirent;
+	uint8_t type;
 	int res=0;
 	int found=0;
-	centfs_sector_byte_offset_t offset;
 	void *ent;
 
-	drsec.number=dirent->base_sector;
 
+	if(callback) { callback->count=0; }
 	res=centfs_read_dirent_header(dirent);
 	if(res < 0 ) { return(res); }
 
-	if(!dirent->parent_dirent) { centfs_print_dr_header(&dirent->header); }
 
 	for (dirent->file_idx=1; (res=centfs_read_dirent_file(dirent))>0; dirent->file_idx++) {
+		/* Get file type of this entry */
+		type= dirent->file.filetype & 0x0f;
+		pardirent= dirent->parent_dirent;
+
+		/* Return  value of  zero indicates a match */
 		if( !centfs_fnmatch(dirent->file.filename, match) ) {
+
+			/* Check if a separator was provided in the match string */
 			if( centfs_fnsep(match)  ) {
-				if( (dirent->file.filetype & 0x0f) == CENTFS_FILETYPE_LIB ) {
-					//printf("Found LIB! %u\n", dirent->file_idx);
+				/* Check if this is a "library file", the term used for a sub directory */
+				if( type == CENTFS_FILETYPE_LIB ) {
+					/* If so, recurse */
+					centfs_dirent_init(
+						&subdirent,
+						dirent->dev,
+						centfs_read_alist_dalent(dirent,(void *)0),
+						dirent
+					);
+					centfs_dir_find(&subdirent,callback,centfs_fnsplit(match));
 				} else { continue; }
+			/* No separator, get results from this level */
 			} else {
-				//printf("Found! %u\n", dirent->file_idx);
 				found++;
+				if(callback) {
+					found += callback->func(dirent,callback);
+				}
 			}
+
 		} else { continue; }
 
-		centfs_read_alist_attr(dirent);
-
-		if(dirent->parent_dirent) { printf("  "); }
-		centfs_print_dr_file(&dirent->file);
-		centfs_print_alist_attr(&dirent->attr);
-		printf("\n");
-
-		/* "library file" is the term used for a sub directory */
-		if( (dirent->file.filetype & 0x0f ) == CENTFS_FILETYPE_LIB ) {
-			subdirent.parent_dirent=dirent;
-			subdirent.dev=dirent->dev;
-			subdirent.base_sector=centfs_read_alist_dalent(dirent,(void *)0);
-			centfs_dir_find(&subdirent,centfs_fnsplit(match));
-		}
-
-
-		centfs_print_alist_dal(dirent);
-		printf("\n");
-
+		//found += callback->func(dirent,callback->opts);
 
 	}
 	if( res < 1 ) { return(res); }
@@ -522,6 +667,9 @@ int main(int argc, char **argv) {
 	char *optstr;
 	const struct option *long_opts;
 	char **argp;
+	centfs_dirent_callback_t callback;
+	centfs_dirent_callback_list_opts_t list_opts = {0};
+	centfs_dirent_callback_extract_opts_t extract_opts = {0};
 
 	centfs_sector_number_t base_dir_sector=0x000010;
 	centfs_sector_byte_offset_t sector_size=0;
@@ -537,6 +685,7 @@ int main(int argc, char **argv) {
 	};
 		
 	const struct subcmd_ent subcmd_list[] = {
+		{"dir", SUBCMD_LIST },
 		{"list", SUBCMD_LIST },
 		{"ls", SUBCMD_LIST },
 		{"extract", SUBCMD_EXTRACT },
@@ -620,8 +769,18 @@ int main(int argc, char **argv) {
 
 
 	switch(subcmd) {
-		case SUBCMD_LIST: optstr=list_optstr; long_opts=list_long_opts; break;
-		case SUBCMD_EXTRACT: optstr=extract_optstr; long_opts=extract_long_opts; break;
+		case SUBCMD_LIST:
+			optstr=list_optstr;
+			long_opts=list_long_opts;
+			callback.func=&centfs_dirent_callback_list;
+			callback.opts=&list_opts;
+			break;
+		case SUBCMD_EXTRACT:
+			optstr=extract_optstr;
+			long_opts=extract_long_opts;
+			callback.func=&centfs_dirent_callback_extract;
+			callback.opts=&extract_opts;
+			break;
 		default: printf("Bad subcommand\n"); usage(argv[0]); break;
 	}
 
@@ -637,12 +796,15 @@ int main(int argc, char **argv) {
 				switch(opt) {
 					case 'a':
 						printf("list all\n");
+						list_opts.mode_all=1;
 						break;
 					case 'R':
 						break;
 					case 'l':
+						list_opts.mode_long=1;
 						break;
 					case 'i':
+						list_opts.mode_sector_index=1;
 						break;
 				}
 				break;
@@ -674,14 +836,11 @@ int main(int argc, char **argv) {
 
 
 
+	centfs_dirent_init(&dirent, &dev, base_dir_sector, (void *)0);
 
-	dirent.dev=&dev;
-	dirent.base_sector=base_dir_sector;
-	dirent.parent_dirent=0;
-
-	printf("Searching for '%.10s'\n", match);
+	//printf("Searching for '%.10s'\n", match);
 	if(match) { cents_nadd_0x80(match,strnlen(match,10)); }
-	found=centfs_dir_find(&dirent,match);
+	found=centfs_dir_find(&dirent,&callback,match);
 
 	return(0);
 	
