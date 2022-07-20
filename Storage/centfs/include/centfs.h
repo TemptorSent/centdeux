@@ -1,3 +1,5 @@
+#include <sys/types.h>
+
 #include "centfs-disk-format.h"
 
 #define CENTFS_FILENAME_BYTES 10
@@ -167,6 +169,20 @@ typedef struct centfs_dirent_t {
 
 } centfs_dirent_t;
 
+typedef struct centfs_FILE {
+	centfs_dirent_t *dirent;
+	centfs_sector_t sector;
+	off_t pos_offset;
+	centfs_sector_byte_t pos_sector_byte;
+	centfs_sector_number_t blksize;
+	centfs_sector_number_t blknum;
+	centfs_sector_byte_t curr_dalent;
+	centfs_sector_byte_t next_dalent;
+
+
+
+
+} centfs_FILE;
 
 #define CENTFS_FILETYPE_DIR	0x0
 #define CENTFS_FILETYPE_BIN	0x1

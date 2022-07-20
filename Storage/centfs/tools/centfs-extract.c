@@ -343,9 +343,9 @@ centfs_sector_t *centfs_FILE_seek_sector(centfs_FILE *F, centfs_sector_number_t 
 	int32_t dale;
 	for(int i=0; !((dale = centfs_read_alist_dalent(F->dirent,&next_dalent)) < 0); i++) {
 		for(int j=0; j < (1 << F->dirent->attr.filesize_increment); j++ ) {
-			if( !(file_secnum-- > 0) ) {
+			if( !(file_sectnum-- > 0) ) {
 				F->sector.number= dale + j;
-				return(F->sector);
+				return(&F->sector);
 			}
 		}
 	}
@@ -353,8 +353,8 @@ centfs_sector_t *centfs_FILE_seek_sector(centfs_FILE *F, centfs_sector_number_t 
 }
 
 centfs_sector_t *centfs_FILE_read_sector(centfs_FILE *F) {
-	if( !(F->dirent->dev->read_sector)(F->dirent->dev,F->sector) ) {
-		return(F->sector);
+	if( !(F->dirent->dev->read_sector)(F->dirent->dev,&F->sector) ) {
+		return(&F->sector);
 	} else {
 		return(NULL);
 	}
@@ -656,7 +656,7 @@ int main(int argc, char **argv) {
 	centfs_sector_number_t alist_sector_start;
 	centfs_dirent_t dirent;
 	int found=0;
-	char *match;
+	char *match=NULL;
 	char mt[23];
 	char *mtp;	
 	char dirname[sizeof(dr->filename)];
@@ -757,10 +757,6 @@ int main(int argc, char **argv) {
 				subcmd= subcmd_list[i].subcmd;
 			}
 		}
-		if( subcmd == SUBCMD_NONE ) {
-			usage(argv[0]);
-		}
-
 	} else {
 		usage(argv[0]);
 	}
@@ -838,8 +834,10 @@ int main(int argc, char **argv) {
 
 	centfs_dirent_init(&dirent, &dev, base_dir_sector, (void *)0);
 
-	//printf("Searching for '%.10s'\n", match);
-	if(match) { cents_nadd_0x80(match,strnlen(match,10)); }
+	if(match) {
+		//printf("Searching for '%.10s'\n", match);
+		cents_nadd_0x80(match,strnlen(match,10));
+	}
 	found=centfs_dir_find(&dirent,&callback,match);
 
 	return(0);
