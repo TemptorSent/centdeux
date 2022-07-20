@@ -343,9 +343,9 @@ centfs_sector_t *centfs_FILE_seek_sector(centfs_FILE *F, centfs_sector_number_t 
 	int32_t dale;
 	for(int i=0; !((dale = centfs_read_alist_dalent(F->dirent,&next_dalent)) < 0); i++) {
 		for(int j=0; j < (1 << F->dirent->attr.filesize_increment); j++ ) {
-			if( !(file_secnum-- > 0) ) {
+			if( !(file_sectnum-- > 0) ) {
 				F->sector.number= dale + j;
-				return(F->sector);
+				return(&F->sector);
 			}
 		}
 	}
@@ -353,8 +353,8 @@ centfs_sector_t *centfs_FILE_seek_sector(centfs_FILE *F, centfs_sector_number_t 
 }
 
 centfs_sector_t *centfs_FILE_read_sector(centfs_FILE *F) {
-	if( !(F->dirent->dev->read_sector)(F->dirent->dev,F->sector) ) {
-		return(F->sector);
+	if( !(F->dirent->dev->read_sector)(F->dirent->dev,&F->sector) ) {
+		return(&F->sector);
 	} else {
 		return(NULL);
 	}

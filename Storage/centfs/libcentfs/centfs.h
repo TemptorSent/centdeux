@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include "centfs-disk-format.h"
 
 #define CENTFS_FILENAME_BYTES 10
